@@ -1,9 +1,12 @@
 // Ui's
 import Navbar from "../components/ui/navbar";
+// import Footer from "../components/ui/footer";
 
 // Sections
 import Home from "../components/ui/sections/home";
 import Gallery from "../components/ui/sections/gallery";
+import Services from "../components/ui/sections/services";
+import Contact from "../components/ui/sections/contact";
 
 export default function WelcomePage() {
   
@@ -29,9 +32,15 @@ export default function WelcomePage() {
         <Gallery/>
       </section>
 
-      <section id="services" className="min-h-screen">
-        <div>Services</div>
+      <section id="services">
+        <Services/>
       </section>
+
+      <section id="contact">
+        <Contact/>
+      </section>
+
+      {/* <Footer/> */}
     </div>
   );
 }

@@ -113,8 +113,8 @@ export default function Home() {
             </svg>
           </button>
 
-          <button
-            type="button"
+          <a
+            href="#gallery"
             className="flex px-8 py-4 items-center uppercase bg-gray-400/10 border border-white/20 text-white/90 montserrat-subcaption font-semibold rounded-3xl hover:bg-gray-400/20 transition-all duration-200 cursor-pointer group"
           >
             <svg
@@ -134,8 +134,8 @@ export default function Home() {
               <path d="M22 4h-4" />
               <circle cx="4" cy="20" r="2" />
             </svg>
-            <span className="ml-2">Explore Services</span>
-          </button>
+            <span className="ml-2">Explore Designs</span>
+          </a>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-24">

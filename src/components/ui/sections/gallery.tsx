@@ -1,4 +1,5 @@
 import { useState } from "react";
+import NailsCard from "../../nails-card";
 
 export default function Gallery() {
   const images = [
@@ -706,6 +707,8 @@ export default function Gallery() {
 
   const [activeFilter, setActiveFilter] = useState("All");
 
+  const [visibleCount, setVisibleCount] = useState(9);
+
   // 1. Create the unique categories for the filter buttons
   const categories = ["All", ...new Set(images.map((image) => image.category))];
 
@@ -715,10 +718,18 @@ export default function Gallery() {
       ? images
       : images.filter((image) => image.category === activeFilter);
 
+  // 3. Slice the filtered images to show only the first 12
+  const visibleImages = filteredImages.slice(0, visibleCount);
+
+  const handleFilterChange = (category: any) => {
+    setActiveFilter(category);
+    setVisibleCount(9);
+  };
+
   return (
-    <div className="lg:mx-95 mt-20">
+    <div className="py-20 ">
       <div className="flex flex-col items-center">
-        <span className="px-2  text-[#FF007F] flex items-center uppercase font-bold text-sm lg:text-base">
+        <span className="px-2 text-[#FF007F] flex items-center uppercase font-bold text-sm lg:text-base">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="15"
@@ -752,7 +763,7 @@ export default function Gallery() {
           {categories.map((category) => (
             <button
               key={category}
-              onClick={() => setActiveFilter(category)}
+              onClick={() => handleFilterChange(category)}
               className={`mt-4 px-6 py-2 border rounded-full transition-all duration-300 cursor-pointer ${
                 activeFilter === category
                   ? "bg-[#FF007F] border-[#FF007F] text-white shadow-[0_0_35px_rgba(255,0,127,0.5)]"
@@ -769,32 +780,76 @@ export default function Gallery() {
 
       {/* 4. Map over filteredImages instead of images */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-        {filteredImages.map((image) => (
-          <div
+        {visibleImages.map((image) => (
+          <NailsCard
             key={image.id}
-            className="flex flex-col rounded-2xl overflow-hidden border-2 border-white/10 hover:border-2 hover:border-[#FF007F]/50 group transition-all duration-300 cursor-pointer"
-          >
-            <img
-              src={image.img}
-              alt={image.category}
-              className="w-full h-64 object-cover block group-hover:scale-105 transition-all duration-300"
-            />
-
-            <div className="p-8">
-              <span className="text-white/60 flex items-center font-bold text-sm leading-tight">
-                {image.category}
-              </span>
-
-              <h1 className="cormorant-garamond-header text-white text-2xl md:text-xl lg:text-2xl py-2 group-hover:text-[#FF007F] transition-all duration-200">
-                {image.title}
-              </h1>
-
-              <span className="text-white/60 flex items-center font-thin text-sm tracking-wider">
-                {image.description}
-              </span>
-            </div>
-          </div>
+            img={image.img}
+            title={image.title}
+            description={image.description}
+            category={image.category}
+          />
         ))}
+      </div>
+
+      {/* Group both buttons into one container */}
+      {visibleCount < filteredImages.length && (
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-16 mb-10">
+          {/* Primary Button: Load 6 More */}
+          <button 
+            onClick={() => setVisibleCount(visibleCount + 6)}
+            className="group flex items-center gap-2 px-8 py-3.5 bg-[#FF007F] text-white text-sm font-bold uppercase tracking-widest rounded-full transition-all duration-300 hover:bg-[#ff1a8c] hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(255,0,127,0.5)] cursor-pointer"
+          >
+            Load More Looks
+            {/* Optional: Add a subtle down arrow that bounces on hover */}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="group-hover:translate-y-0.5 transition-transform duration-300"
+            >
+              <path d="M12 5v14M19 12l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {/* Secondary Button: Show All */}
+          <button
+            onClick={() => setVisibleCount(filteredImages.length)}
+            className="px-8 py-3.5 bg-transparent border border-white/20 text-[#F9FAFB]/70 hover:text-white hover:border-white/50 text-sm font-semibold uppercase tracking-widest rounded-full transition-all duration-300 cursor-pointer"
+          >
+            Show All ({filteredImages.length})
+          </button>
+        </div>
+      )}
+
+      <div className={`p-10 rounded-[2rem] border-1 border-white/20 flex justify-between items-center`}>
+        <div>
+          <span className="text-[#FF007F] flex items-center uppercase font-bold text-sm lg:text-base">
+            Custom Design Request
+          </span>
+
+          <h1
+            className={`playfair-display-header text-white text-xl md:text-2xl lg:text-3xl py-2`}
+          >
+            Have a Pinterest board or photo reference?
+          </h1>
+          <p
+            className={`text-white/60 font-thin text-sm md:text-base lg:text-base`}
+          >
+            Upload your design idea in our booking portal for an exact quote.
+          </p>
+        </div>
+
+        <div>
+          <button className = {`flex items-center gap-2 px-8 py-3.5 bg-[#FF007F] text-white text-sm font-bold uppercase tracking-wider rounded-full transition-all duration-300 shadow-[0_0_25px_rgba(255,0,127,0.5)] hover:bg-[#ff1a8c] hover:shadow-[0_0_40px_rgba(255,0,127,0.5)] cursor-pointer`}>
+            Book Custom Inspo Set
+          </button>
+        </div>
       </div>
     </div>
   );
