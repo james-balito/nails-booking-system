@@ -77,7 +77,7 @@ export default function SocMedCard({
         className="block w-full mt-auto pt-6 text-lg transition-all duration-200"
       >
         <span
-          className={`uppercase flex items-center justify-center font-bold px-6 py-4 bg-black hover:bg-[${colorButton}] border border-white/20 hover:border-[${borderColor}] rounded-2xl text-white cursor-pointer hover:text-white text-sm leading-none`}
+          className={`uppercase flex items-center justify-center font-bold px-6 py-4 bg-black hover:bg-[${colorButton}] border border-white/20 hover:border-[#FF007F] rounded-2xl text-white cursor-pointer hover:text-[#FF007F] text-sm leading-none`}
         >
           {buttonText}
           <span className="ml-3">{buttonIcon}</span>

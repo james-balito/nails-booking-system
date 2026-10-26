@@ -10,7 +10,7 @@ export default function Navbar() {
       </div>
 
       {/* Navigation Links */}
-      <div className="space-x-6 tracking-widest text-[#F9FAFB]/50 font-semibold text-sm lg:text-base uppercase">
+      <div className="space-x-6 tracking-wider text-[#F9FAFB]/50 font-semibold text-sm lg:text-base xl:text-sm uppercase">
         <a href="#home" className="hover:text-[#F9FAFB] transition-all duration-200">
           Home
         </a>
@@ -29,13 +29,13 @@ export default function Navbar() {
       <div className="space-x-6 flex items-center">
         <button 
           type="button"
-          className="text-[#F9FAFB]/70 hover:text-[#F9FAFB] transition-colors font-semibold text-sm lg:text-base tracking-widest uppercase"
+          className="text-[#F9FAFB]/70 hover:text-[#F9FAFB] transition-colors font-semibold text-sm lg:text-base xl:text-sm tracking-widest uppercase"
         >
           Login
         </button>
         <button
           type="button"
-          className="uppercase tracking-wider bg-[#FF007F] text-white/90 text-sm lg:text-base font-semibold px-6 py-2.5 rounded-full hover:text-white hover:-translate-y-0.5 hover:shadow-[0_0_25px_rgba(255,0,127,0.6)] transition-all duration-200 cursor-pointer"
+          className="uppercase tracking-wider bg-[#FF007F] text-white/90 text-sm lg:text-base xl:text-sm font-semibold px-6 py-2.5 rounded-full hover:text-white hover:-translate-y-0.5 hover:shadow-[0_0_25px_rgba(255,0,127,0.6)] transition-all duration-200 cursor-pointer"
         >
           Book Now
         </button>

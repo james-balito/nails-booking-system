@@ -1,6 +1,6 @@
 // Ui's
 import Navbar from "../components/ui/navbar";
-// import Footer from "../components/ui/footer";
+import Footer from "../components/ui/footer";
 
 // Sections
 import Home from "../components/ui/sections/home";
@@ -40,7 +40,7 @@ export default function WelcomePage() {
         <Contact/>
       </section>
 
-      {/* <Footer/> */}
+      <Footer/>
     </div>
   );
 }
