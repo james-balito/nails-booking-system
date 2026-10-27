@@ -8,20 +8,22 @@ import Gallery from "../components/ui/sections/gallery";
 import Services from "../components/ui/sections/services";
 import Contact from "../components/ui/sections/contact";
 
+// Hooks
+import { useScrollAnimation } from "../hooks/useScrollAnimation";
+
 export default function WelcomePage() {
-  
+  useScrollAnimation();
+
   return (
     <div className={`bg-[#0A0A0A]`}>
       {/* Navigation Bar & Links */}
-      <section id="nav" className ="sticky top-0 z-50">
+      <section id="nav" className="sticky top-0 z-50">
         <Navbar />
       </section>
 
       {/* Home Section */}
-      <section
-        id="home"
-      >
-      <Home />
+      <section id="home">
+        <Home />
       </section>
 
       {/* Gallery Section */}
@@ -29,18 +31,18 @@ export default function WelcomePage() {
         id="gallery"
         className="min-h-screen flex justify-center items-start"
       >
-        <Gallery/>
+        <Gallery />
       </section>
 
       <section id="services">
-        <Services/>
+        <Services />
       </section>
 
       <section id="contact">
-        <Contact/>
+        <Contact />
       </section>
 
-      <Footer/>
+      <Footer />
     </div>
   );
 }

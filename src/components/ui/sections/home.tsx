@@ -3,13 +3,11 @@ import gsap from "gsap";
 import Card from "../../card";
 
 export default function Home() {
-  const containerRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const subRef = useRef<HTMLParagraphElement>(null);
   const buttonsRef = useRef<HTMLDivElement>(null);
-  const cardsRef = useRef<HTMLDivElement>(null);
 
-  const serviceCards = [
+  const cards = [
     {
       icon: (
         <svg
@@ -80,50 +78,31 @@ export default function Home() {
   ];
 
   useEffect(() => {
-    // Create a GSAP Timeline for a staggered, smooth entrance
-    const tl = gsap.timeline({ defaults: { ease: "power4.out", duration: 1.2 } });
+    const tl = gsap.timeline({
+      defaults: { ease: "power4.out", duration: 1.2 },
+    });
 
-    // 1. Animate the title (fades in and slides up)
-    tl.fromTo(
-      titleRef.current,
-      { y: 50, opacity: 0 },
-      { y: 0, opacity: 1 }
-    )
-    // 2. Animate the sub-caption
-    .fromTo(
-      subRef.current,
-      { y: 30, opacity: 0 },
-      { y: 0, opacity: 1 },
-      "-=0.8" // Overlap with the title animation by 0.8s
-    )
-    // 3. Animate the buttons (pop in slightly)
-    .fromTo(
-      buttonsRef.current,
-      { y: 30, opacity: 0, scale: 0.95 },
-      { y: 0, opacity: 1, scale: 1 },
-      "-=0.8"
-    )
-    // 4. Animate the cards (staggered float up)
-    .fromTo(
-      cardsRef.current?.children || [],
-      { y: 60, opacity: 0 },
-      { y: 0, opacity: 1, stagger: 0.15 }, // 0.15s delay between each card
-      "-=0.6"
-    );
+    tl.fromTo(titleRef.current, { y: 50, opacity: 0 }, { y: 0, opacity: 1 })
+      .fromTo(
+        subRef.current,
+        { y: 30, opacity: 0 },
+        { y: 0, opacity: 1 },
+        "-=0.8",
+      )
+      .fromTo(
+        buttonsRef.current,
+        { y: 30, opacity: 0, scale: 0.95 },
+        { y: 0, opacity: 1, scale: 1 },
+        "-=0.8",
+      );
   }, []);
 
   return (
-    <div 
-      ref={containerRef}
-      className="relative overflow-hidden min-h-screen bg-[#0A0A0A] flex flex-col justify-center items-center border-y border-white/20 py-16 sm:py-20"
-    >
-      {/* Blurry Background */}
+    <div className="relative overflow-hidden min-h-screen bg-[#0A0A0A] flex flex-col justify-center items-center border-y border-white/20 py-16 sm:py-20">
       <div className="absolute top-[30%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-[#FF007F]/40 rounded-full blur-[500px] sm:blur-[250px] pointer-events-none z-0"></div>
 
       <div className="relative z-10 flex flex-col items-center w-full px-4 sm:px-6 max-w-5xl mx-auto">
-        
-        {/* Hero Title */}
-        <h1 
+        <h1
           ref={titleRef}
           className="cormorant-garamond-header text-[#F9FAFB] font-semibold text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-8xl text-center pb-6 sm:pb-12 leading-[0.90] sm:leading-[0.9]"
         >
@@ -133,8 +112,7 @@ export default function Home() {
           </span>
         </h1>
 
-        {/* Sub-caption */}
-        <p 
+        <p
           ref={subRef}
           className="poppins-caption text-[#F9FAFB]/70 text-sm sm:text-base md:text-lg lg:text-xl text-center max-w-2xl"
         >
@@ -142,8 +120,7 @@ export default function Home() {
           set.
         </p>
 
-        {/* Call to Action Buttons */}
-        <div 
+        <div
           ref={buttonsRef}
           className="flex flex-col sm:flex-row w-full sm:w-auto items-center justify-center gap-4 sm:gap-5 mt-10 sm:mt-14"
         >
@@ -194,12 +171,9 @@ export default function Home() {
           </a>
         </div>
 
-        {/* Service Cards Grid */}
-        <div 
-          ref={cardsRef}
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 mt-16 md:mt-24 w-full"
-        >
-          {serviceCards.map((card, index) => (
+        {/* Added services-grid class here */}
+        <div className="services-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 mt-16 md:mt-24 w-full">
+          {cards.map((card, index) => (
             <Card
               key={index}
               icon={card.icon}

@@ -78,7 +78,7 @@ export default function Contact() {
       </div>
 
       {/* Grid Container */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 pt-6 max-w-5xl mx-auto px-4 sm:px-6">
+      <div className="socmed-grid grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 pt-6 max-w-5xl mx-auto px-4 sm:px-6">
         
         {contacts.map((contact) => (
           <SocMedCard

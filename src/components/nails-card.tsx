@@ -13,7 +13,8 @@ export default function NailsCard({
 }: NailsCardProps) {
   return (
     <div
-      className="flex flex-col rounded-2xl overflow-hidden border-2 border-white/10 hover:border-[#FF007F]/50 group transition-all duration-300 cursor-pointer h-full bg-[#0A0A0A]"
+      // 👇 Added "nails-card opacity-0" for GSAP targeting
+      className="nails-card flex flex-col rounded-2xl overflow-hidden border-2 border-white/10 hover:border-[#FF007F]/50 group transition-all duration-300 cursor-pointer h-full bg-[#0A0A0A] animate-in fade-in slide-in-from-bottom-4"
     >
       {/* Image Container */}
       <div className="overflow-hidden relative w-full">
@@ -25,7 +26,7 @@ export default function NailsCard({
       </div>
 
       {/* Content Container */}
-      <div className="p-5 sm:p-6 md:p-7 lg:p-8 flex flex-col flex-grow">
+      <div className="p-5 sm:p-6 md:p-7 lg:p-8 flex flex-col flex-graow">
         {/* Category */}
         <span className="text-white/60 font-bold text-xs sm:text-sm uppercase tracking-wider mb-2">
           {category}
@@ -47,9 +48,7 @@ export default function NailsCard({
             Details
           </span>
 
-          <button
-            className="flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-6 md:px-8 py-2 sm:py-3 bg-[#FF007F] text-white text-xs sm:text-sm font-bold uppercase tracking-wider sm:tracking-widest rounded-full transition-all duration-300 hover:bg-[#ff1a8c] hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(255,0,127,0.5)] whitespace-nowrap"
-          >
+          <button className="flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-6 md:px-8 py-2 sm:py-3 bg-[#FF007F] text-white text-xs sm:text-sm font-bold uppercase tracking-wider sm:tracking-widest rounded-full transition-all duration-300 hover:bg-[#ff1a8c] hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(255,0,127,0.5)] whitespace-nowrap">
             Book Look
             <svg
               xmlns="http://www.w3.org/2000/svg"

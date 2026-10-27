@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import gsap from "gsap";
 import NailsCard from "../../nails-card";
 
 export default function Gallery() {
@@ -706,25 +707,55 @@ export default function Gallery() {
   ];
 
   const [activeFilter, setActiveFilter] = useState("All");
-
   const [visibleCount, setVisibleCount] = useState(9);
 
-  // 1. Create the unique categories for the filter buttons
+  // Create a ref to target the specific grid container
+  const gridRef = useRef<HTMLDivElement>(null);
+
   const categories = ["All", ...new Set(images.map((image) => image.category))];
 
-  // 2. Filter the images based on the active filter
   const filteredImages =
     activeFilter === "All"
       ? images
       : images.filter((image) => image.category === activeFilter);
 
-  // 3. Slice the filtered images to show only the first 12
   const visibleImages = filteredImages.slice(0, visibleCount);
 
-  const handleFilterChange = (category: any) => {
+  const handleFilterChange = (category: string) => {
     setActiveFilter(category);
     setVisibleCount(9);
   };
+
+  // The Fix: This ensures animations work on Load More AND Filter changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!gridRef.current) return;
+
+      // Grab all invisible cards inside the grid
+      const cardsToAnimate = gridRef.current.querySelectorAll(
+        ".nails-card.opacity-0"
+      );
+
+      if (cardsToAnimate.length > 0) {
+        gsap.to(cardsToAnimate, {
+          y: 0,
+          opacity: 1,
+          scale: 1,
+          duration: 0.6,
+          ease: "power3.out",
+          stagger: 0.1,
+          onComplete: () => {
+            // Only remove opacity-0 AFTER the animation is done
+            cardsToAnimate.forEach((card) =>
+              card.classList.remove("opacity-0")
+            );
+          },
+        });
+      }
+    }, 50); // 50ms gives React time to mount the new cards
+
+    return () => clearTimeout(timer);
+  }, [visibleCount, activeFilter]);
 
   return (
     <div className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-10 xl:px-16 max-w-[1600px] mx-auto">
@@ -780,8 +811,11 @@ export default function Gallery() {
         </div>
       </div>
 
-      {/* Gallery Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10">
+      {/* Gallery Grid - Added ref here */}
+      <div
+        ref={gridRef}
+        className="nails-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10"
+      >
         {visibleImages.map((image) => (
           <NailsCard
             key={image.id}
