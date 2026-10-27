@@ -1,18 +1,5 @@
 @import "tailwindcss";
 
-@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=Inter:ital,opsz,wght@0,14..32,700;1,14..32,700&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
-
-/* 
-    'gloss-black': '#0A0A0A',
-    'gloss-card': '#1A1A1A', // Slightly lighter black for cards
-        
-     // 30% - Secondary
-    'gloss-white': '#F9FAFB',
-    'gloss-silver': '#9CA3AF',
-        
-    // 10% - Accent
-    'gloss-pink': '#FF007F', 
-*/
 html {
     scroll-padding-top: 70px;
     scroll-behavior: smooth;

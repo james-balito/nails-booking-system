@@ -1,6 +1,14 @@
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
 import Card from "../../card";
 
 export default function Home() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const subRef = useRef<HTMLParagraphElement>(null);
+  const buttonsRef = useRef<HTMLDivElement>(null);
+  const cardsRef = useRef<HTMLDivElement>(null);
+
   const serviceCards = [
     {
       icon: (
@@ -11,9 +19,9 @@ export default function Home() {
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
           className="lucide lucide-sparkles preview-icon"
         >
           <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" />
@@ -34,9 +42,9 @@ export default function Home() {
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
           className="lucide lucide-clock-3 preview-icon"
         >
           <circle cx="12" cy="12" r="10" />
@@ -55,9 +63,9 @@ export default function Home() {
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
           className="lucide lucide-sparkles preview-icon"
         >
           <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" />
@@ -71,35 +79,83 @@ export default function Home() {
     },
   ];
 
-  return (
-    <div className="relative overflow-hidden min-h-screen bg-[#0A0A0A] flex flex-col justify-center items-center border-y-1 border-white/20">
-      {/* Blurry Background */}
-      <div className="absolute top-[30%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#FF007F]/20 rounded-full blur-[250px] pointer-events-none z-0"></div>
+  useEffect(() => {
+    // Create a GSAP Timeline for a staggered, smooth entrance
+    const tl = gsap.timeline({ defaults: { ease: "power4.out", duration: 1.2 } });
 
-      <div className="relative z-10 flex flex-col items-center w-full">
-        <h1 className="cormorant-garamond-header text-[#F9FAFB] font-semibold text-4xl md:text-5xl lg:text-8xl text-center pb-12">
+    // 1. Animate the title (fades in and slides up)
+    tl.fromTo(
+      titleRef.current,
+      { y: 50, opacity: 0 },
+      { y: 0, opacity: 1 }
+    )
+    // 2. Animate the sub-caption
+    .fromTo(
+      subRef.current,
+      { y: 30, opacity: 0 },
+      { y: 0, opacity: 1 },
+      "-=0.8" // Overlap with the title animation by 0.8s
+    )
+    // 3. Animate the buttons (pop in slightly)
+    .fromTo(
+      buttonsRef.current,
+      { y: 30, opacity: 0, scale: 0.95 },
+      { y: 0, opacity: 1, scale: 1 },
+      "-=0.8"
+    )
+    // 4. Animate the cards (staggered float up)
+    .fromTo(
+      cardsRef.current?.children || [],
+      { y: 60, opacity: 0 },
+      { y: 0, opacity: 1, stagger: 0.15 }, // 0.15s delay between each card
+      "-=0.6"
+    );
+  }, []);
+
+  return (
+    <div 
+      ref={containerRef}
+      className="relative overflow-hidden min-h-screen bg-[#0A0A0A] flex flex-col justify-center items-center border-y border-white/20 py-16 sm:py-20"
+    >
+      {/* Blurry Background */}
+      <div className="absolute top-[30%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-[#FF007F]/40 rounded-full blur-[500px] sm:blur-[250px] pointer-events-none z-0"></div>
+
+      <div className="relative z-10 flex flex-col items-center w-full px-4 sm:px-6 max-w-5xl mx-auto">
+        
+        {/* Hero Title */}
+        <h1 
+          ref={titleRef}
+          className="cormorant-garamond-header text-[#F9FAFB] font-semibold text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-8xl text-center pb-6 sm:pb-12 leading-[0.90] sm:leading-[0.9]"
+        >
           Flawless Nails,{" "}
-          <span className="text-[#FF007F] font-thin italic shadow-sm">
-            <br />
+          <span className="text-[#FF007F] font-thin italic shadow-sm block">
             Zero Hassle
           </span>
         </h1>
 
-        <p className="poppins-caption text-[#F9FAFB]/70 text-lg md:text-xl lg:text-xl text-center">
+        {/* Sub-caption */}
+        <p 
+          ref={subRef}
+          className="poppins-caption text-[#F9FAFB]/70 text-sm sm:text-base md:text-lg lg:text-xl text-center max-w-2xl"
+        >
           Slay every detail. Luxurious care and custom art for your signature
           set.
         </p>
 
-        <div className="flex space-x-5 mt-15">
+        {/* Call to Action Buttons */}
+        <div 
+          ref={buttonsRef}
+          className="flex flex-col sm:flex-row w-full sm:w-auto items-center justify-center gap-4 sm:gap-5 mt-10 sm:mt-14"
+        >
           <button
             type="button"
-            className="flex px-9 py-5 items-center uppercase bg-[#FF007F] inter-subcaption text-white/90 tracking-wider font-bold rounded-3xl shadow-[0_0_30px_rgba(255,0,127,0.4)] hover:shadow-[0_0_50px_rgba(255,0,127,0.8)] hover:-translate-y-1 transition-all duration-200 cursor-pointer group"
+            className="w-full sm:w-auto flex justify-center px-6 py-4 sm:px-9 sm:py-5 items-center uppercase bg-[#FF007F] inter-subcaption text-white/90 tracking-wider font-bold rounded-3xl shadow-[0_0_30px_rgba(255,0,127,0.4)] hover:shadow-[0_0_50px_rgba(255,0,127,0.8)] hover:-translate-y-1 transition-all duration-200 cursor-pointer group"
           >
             <span className="mr-2">Book Now</span>
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="23"
+              width="20"
+              height="20"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -115,7 +171,7 @@ export default function Home() {
 
           <a
             href="#gallery"
-            className="flex px-8 py-4 items-center uppercase bg-gray-400/10 border border-white/20 text-white/90 montserrat-subcaption font-semibold rounded-3xl hover:bg-gray-400/20 transition-all duration-200 cursor-pointer group"
+            className="w-full sm:w-auto flex justify-center px-6 py-4 sm:px-8 sm:py-4 items-center uppercase bg-gray-400/10 border border-white/20 text-white/90 montserrat-subcaption font-semibold rounded-3xl hover:bg-gray-400/20 transition-all duration-200 cursor-pointer group"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -138,7 +194,11 @@ export default function Home() {
           </a>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-24">
+        {/* Service Cards Grid */}
+        <div 
+          ref={cardsRef}
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 mt-16 md:mt-24 w-full"
+        >
           {serviceCards.map((card, index) => (
             <Card
               key={index}

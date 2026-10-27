@@ -727,9 +727,10 @@ export default function Gallery() {
   };
 
   return (
-    <div className="py-20 ">
+    <div className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-10 xl:px-16 max-w-[1600px] mx-auto">
       <div className="flex flex-col items-center">
-        <span className="px-2 text-[#FF007F] flex items-center uppercase font-bold text-sm lg:text-base">
+        {/* Top Label */}
+        <span className="px-2 text-[#FF007F] flex items-center uppercase font-bold text-xs sm:text-sm lg:text-base">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="15"
@@ -750,27 +751,28 @@ export default function Gallery() {
           Nail Designs Gallery
         </span>
 
-        <h1 className="cormorant-garamond-header text-white font-medium text-2xl md:text-3xl lg:text-5xl py-4">
+        {/* Header */}
+        <h1 className="cormorant-garamond-header text-white font-medium text-2xl sm:text-3xl md:text-4xl lg:text-5xl py-4 text-center">
           The Glossx.Claw Collections
         </h1>
-        <p className="leading-tight inter-subcaption text-[#F9FAFB]/60 text-sm md:text-base lg:text-base text-center">
+        <p className="leading-tight inter-subcaption text-[#F9FAFB]/60 text-sm sm:text-base text-center max-w-2xl">
           Explore our latest handcrafted custom sets. Click any look to inspect
           the design specs or book it directly for your next appointment.
         </p>
 
-        {/* 3. Render the filter buttons dynamically */}
-        <div className="flex flex-wrap justify-center items-center py-10 gap-3">
+        {/* Filter Buttons */}
+        <div className="flex flex-wrap justify-center items-center py-8 sm:py-10 gap-2 sm:gap-3">
           {categories.map((category) => (
             <button
               key={category}
               onClick={() => handleFilterChange(category)}
-              className={`mt-4 px-6 py-2 border rounded-full transition-all duration-300 cursor-pointer ${
+              className={`px-4 py-1.5 sm:px-6 sm:py-2 border rounded-full transition-all duration-300 cursor-pointer ${
                 activeFilter === category
                   ? "bg-[#FF007F] border-[#FF007F] text-white shadow-[0_0_35px_rgba(255,0,127,0.5)]"
                   : "border-white/20 bg-[#F9FAFB]/10 text-[#F9FAFB]/70 hover:bg-[#F9FAFB]/20"
               }`}
             >
-              <span className="leading-tight font-bold text-sm">
+              <span className="leading-tight font-bold text-xs sm:text-sm">
                 {category === "All" ? "All Sets" : category}
               </span>
             </button>
@@ -778,8 +780,8 @@ export default function Gallery() {
         </div>
       </div>
 
-      {/* 4. Map over filteredImages instead of images */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+      {/* Gallery Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10">
         {visibleImages.map((image) => (
           <NailsCard
             key={image.id}
@@ -791,16 +793,14 @@ export default function Gallery() {
         ))}
       </div>
 
-      {/* Group both buttons into one container */}
+      {/* Load More / Show All Buttons */}
       {visibleCount < filteredImages.length && (
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-16 mb-10">
-          {/* Primary Button: Load 6 More */}
-          <button 
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10 xl:mt-16 mb-10">
+          <button
             onClick={() => setVisibleCount(visibleCount + 6)}
-            className="group flex items-center gap-2 px-8 py-3.5 bg-[#FF007F] text-white text-sm font-bold uppercase tracking-widest rounded-full transition-all duration-300 hover:bg-[#ff1a8c] hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(255,0,127,0.5)] cursor-pointer"
+            className="group flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 sm:px-8 sm:py-3.5 bg-[#FF007F] text-white text-xs sm:text-sm font-bold uppercase tracking-widest rounded-full transition-all duration-300 hover:bg-[#ff1a8c] hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(255,0,127,0.5)] cursor-pointer"
           >
             Load More Looks
-            {/* Optional: Add a subtle down arrow that bounces on hover */}
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="16"
@@ -817,36 +817,32 @@ export default function Gallery() {
             </svg>
           </button>
 
-          {/* Secondary Button: Show All */}
           <button
             onClick={() => setVisibleCount(filteredImages.length)}
-            className="px-8 py-3.5 bg-transparent border border-white/20 text-[#F9FAFB]/70 hover:text-white hover:border-white/50 text-sm font-semibold uppercase tracking-widest rounded-full transition-all duration-300 cursor-pointer"
+            className="w-full sm:w-auto px-6 py-3 sm:px-8 sm:py-3.5 bg-transparent border border-white/20 text-[#F9FAFB]/70 hover:text-white hover:border-white/50 text-xs sm:text-sm font-semibold uppercase tracking-widest rounded-full transition-all duration-300 cursor-pointer"
           >
             Show All ({filteredImages.length})
           </button>
         </div>
       )}
 
-      <div className={`p-10 rounded-[2rem] border-1 border-white/20 flex justify-between items-center`}>
-        <div>
-          <span className="text-[#FF007F] flex items-center uppercase font-bold text-sm lg:text-base">
+      {/* Custom Design Request Banner */}
+      <div className="p-6 sm:p-8 lg:p-10 mt-10 rounded-3xl lg:rounded-[2rem] border border-white/20 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 lg:gap-0 bg-white/5">
+        <div className="max-w-2xl">
+          <span className="text-[#FF007F] flex items-center uppercase font-bold text-xs sm:text-sm lg:text-base mb-1">
             Custom Design Request
           </span>
 
-          <h1
-            className={`playfair-display-header text-white text-xl md:text-2xl lg:text-3xl py-2`}
-          >
+          <h1 className="playfair-display-header text-white text-lg sm:text-xl md:text-2xl lg:text-3xl py-2">
             Have a Pinterest board or photo reference?
           </h1>
-          <p
-            className={`text-white/60 font-thin text-sm md:text-base lg:text-base`}
-          >
+          <p className="text-white/60 font-thin text-xs sm:text-sm md:text-base">
             Upload your design idea in our booking portal for an exact quote.
           </p>
         </div>
 
-        <div>
-          <button className = {`flex items-center gap-2 px-8 py-3.5 bg-[#FF007F] text-white text-sm font-bold uppercase tracking-wider rounded-full transition-all duration-300 shadow-[0_0_25px_rgba(255,0,127,0.5)] hover:bg-[#ff1a8c] hover:shadow-[0_0_40px_rgba(255,0,127,0.5)] cursor-pointer`}>
+        <div className="w-full lg:w-auto shrink-0">
+          <button className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-3 sm:px-8 sm:py-3.5 bg-[#FF007F] text-white text-xs sm:text-sm font-bold uppercase tracking-wider rounded-full transition-all duration-300 shadow-[0_0_25px_rgba(255,0,127,0.5)] hover:bg-[#ff1a8c] hover:shadow-[0_0_40px_rgba(255,0,127,0.5)] cursor-pointer">
             Book Custom Inspo Set
           </button>
         </div>

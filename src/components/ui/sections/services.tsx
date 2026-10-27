@@ -53,7 +53,7 @@ export default function Services() {
     },
   ];
   return (
-    <div className={`bg-[#1A1A1A] px-95 py-25 border-y-2 border-white/10`}>
+    <div className={`bg-[#1A1A1A] px-10 py-15 xl:px-95 xl:py-25 border-y-2 border-white/10`}>
       <div className="flex flex-col items-center">
         <span className="px-2 text-[#FF007F] flex items-center uppercase font-bold text-sm lg:text-lg">
           {" "}

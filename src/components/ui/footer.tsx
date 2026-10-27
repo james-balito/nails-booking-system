@@ -6,7 +6,7 @@ export default function Footer() {
 
   return (
     <>
-      <footer className="mx-90 font-thin flex flex-col md:flex-row items-center justify-between px-8 text-[#F9FAFB]/50 text-sm py-6 bg-[#0A0A0A]/90 backdrop-blur-md border-t border-white/10 gap-4 md:gap-0">
+      <footer className="xl:mx-90 font-thin flex flex-col md:flex-row items-center justify-between px-8 text-[#F9FAFB]/50 text-sm py-6 bg-[#0A0A0A]/90 backdrop-blur-md border-t border-white/10 gap-4 md:gap-0">
         <span>
           &copy; {new Date().getFullYear()} GlossX Claw. All rights reserved.
         </span>
