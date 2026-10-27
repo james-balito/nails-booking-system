@@ -13,7 +13,7 @@ export default function Navbar() {
 
   return (
     // 👇 Applied px-[95px] as requested
-    <nav className="sticky top-0 z-[9000] flex flex-col w-full px-75 py-4 bg-[#0A0A0A]/90 backdrop-blur-md border-b border-white/10">
+    <nav className="sticky top-0 z-[9000] flex flex-col w-full px-6 xl:px-75 py-4 bg-[#0A0A0A]/90 backdrop-blur-md border-b border-white/10">
       
       {/* --- TOP ROW (Always Visible) --- */}
       <div className="flex justify-between items-center w-full">
