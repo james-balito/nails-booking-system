@@ -100,7 +100,7 @@ export default function Navbar() {
       <div
         className={`
           lg:hidden absolute top-full left-0 w-full bg-[#0A0A0A] border-b border-white/10 
-          flex flex-col items-center gap-6 py-8 px-[95px] shadow-2xl transition-all duration-300 ease-in-out origin-top
+          flex flex-col items-center gap-6 py-8 px-6 shadow-2xl transition-all duration-300 ease-in-out origin-top
           ${isOpen ? "opacity-100 scale-y-100 visible" : "opacity-0 scale-y-0 invisible"}
         `}
       >
