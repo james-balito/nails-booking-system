@@ -1,9 +1,9 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Navigation Links Array to keep code clean
   const navLinks = [
     { name: "Home", href: "#home" },
     { name: "Gallery", href: "#gallery" },
@@ -12,15 +12,12 @@ export default function Navbar() {
   ];
 
   return (
-    // 👇 Applied px-[95px] as requested
     <nav className="sticky top-0 z-[9000] flex flex-col w-full px-6 xl:px-75 py-4 bg-[#0A0A0A]/90 backdrop-blur-md border-b border-white/10">
-      
       {/* --- TOP ROW (Always Visible) --- */}
       <div className="flex justify-between items-center w-full">
-        
         {/* Logo */}
         <div className="text-[#F9FAFB] hover:text-[#FF007F] playfair-display-header font-bold text-2xl md:text-3xl transition-colors duration-200 z-50">
-          <a href="#nav" onClick={() => setIsOpen(false)}>
+          <a href="#home" onClick={() => setIsOpen(false)}>
             Glossx.claw
           </a>
         </div>
@@ -40,12 +37,12 @@ export default function Navbar() {
 
         {/* Desktop CTA Buttons */}
         <div className="hidden lg:flex space-x-6 items-center">
-          <button
-            type="button"
-            className="text-[#F9FAFB]/70 hover:text-[#F9FAFB] transition-colors font-semibold text-sm xl:text-base tracking-widest uppercase"
+          <Link
+            to="/login"
+            className="cursor-pointer text-[#F9FAFB]/70 hover:text-[#F9FAFB] transition-colors font-semibold text-sm xl:text-base tracking-widest uppercase"
           >
             Login
-          </button>
+          </Link>
           <button
             type="button"
             className="uppercase tracking-wider bg-[#FF007F] text-white/90 text-sm xl:text-base font-semibold px-6 py-2.5 rounded-full hover:text-white hover:-translate-y-0.5 hover:shadow-[0_0_25px_rgba(255,0,127,0.6)] transition-all duration-200 cursor-pointer"
@@ -60,37 +57,15 @@ export default function Navbar() {
           onClick={() => setIsOpen(!isOpen)}
         >
           {isOpen ? (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="28"
-              height="28"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="lucide lucide-x preview-icon"
-            >
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 6 6 18" />
               <path d="m6 6 12 12" />
             </svg>
           ) : (
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              width="24" 
-              height="24" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              className="lucide lucide-menu preview-icon"
-            >
-              <path d="M4 5h16"/>
-              <path d="M4 12h16"/>
-              <path d="M4 19h16"/>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 5h16" />
+              <path d="M4 12h16" />
+              <path d="M4 19h16" />
             </svg>
           )}
         </button>
@@ -120,12 +95,14 @@ export default function Navbar() {
 
         {/* Mobile CTA Buttons */}
         <div className="flex flex-col w-full gap-4 mt-2">
-          <button
-            type="button"
-            className="w-full text-[#F9FAFB]/70 hover:text-[#F9FAFB] transition-colors font-semibold text-sm tracking-widest uppercase py-2"
+          {/* 👇 FIXED: Changed from <button> to <Link> */}
+          <Link
+            to="/ologin"
+            onClick={() => setIsOpen(false)}
+            className="w-full text-center text-[#F9FAFB]/70 hover:text-[#F9FAFB] transition-colors font-semibold text-sm tracking-widest uppercase py-2"
           >
             Login
-          </button>
+          </Link>
           <button
             type="button"
             className="w-full uppercase tracking-wider bg-[#FF007F] text-white font-semibold text-sm px-6 py-3 rounded-full hover:bg-[#FF007F]/80 transition-all duration-200"
