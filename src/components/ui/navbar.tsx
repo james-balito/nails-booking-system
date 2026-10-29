@@ -97,7 +97,7 @@ export default function Navbar() {
         <div className="flex flex-col w-full gap-4 mt-2">
           {/* 👇 FIXED: Changed from <button> to <Link> */}
           <Link
-            to="/ologin"
+            to="/login"
             onClick={() => setIsOpen(false)}
             className="w-full text-center text-[#F9FAFB]/70 hover:text-[#F9FAFB] transition-colors font-semibold text-sm tracking-widest uppercase py-2"
           >
