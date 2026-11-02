@@ -1,13 +1,9 @@
-import { useState } from "react";
 import { useAuth } from "../context/authContext";
 import Sidebar from "../components/ui/sidebar";
 
 export default function UserDashboard() {
   const { profile, user } = useAuth();
   
-  // Example state for a booking modal (you can expand on this later)
-  const [isBookingOpen, setIsBookingOpen] = useState(false);
-
   // Fallbacks for Google/Email auth
   const displayName =
     profile?.full_name ||
@@ -52,7 +48,7 @@ export default function UserDashboard() {
             </div>
             
             <button 
-              onClick={() => setIsBookingOpen(true)}
+              onClick={() => alert("Book New Set")}
               className="w-full md:w-auto bg-[#FF007F] text-white font-bold px-6 py-3 rounded-xl hover:bg-[#FF007F]/80 transition-colors shadow-[0_0_15px_rgba(255,0,127,0.3)]"
             >
               + Book New Set
