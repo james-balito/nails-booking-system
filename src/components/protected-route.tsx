@@ -12,10 +12,10 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     );
   }
 
-  // If no user is logged in, redirect to login
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
+  // Removed the admin redirect here! 
   return <>{children}</>;
 }
