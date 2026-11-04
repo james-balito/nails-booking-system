@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
-import Card from "../../card";
+import Card from "../../components/card";
 
 export default function Home() {
   const titleRef = useRef<HTMLHeadingElement>(null);

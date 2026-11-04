@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import gsap from "gsap";
-import NailsCard from "../../nails-card";
+import NailsCard from "../../components/nails-card";
 
 export default function Gallery() {
   const images = [

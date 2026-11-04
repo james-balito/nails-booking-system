@@ -1,60 +1,87 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
+
+// Styles
+import "./App.css";
 
 // Pages
 import WelcomePage from "./pages/welcome-page";
-import Login from "./pages/login";
-import SignUp from "./pages/sign-up";
+import Login from "./pages/auth/login";
+import SignUp from "./pages/auth/sign-up";
 import UserDashboard from "./pages/user-dashboard";
-import AdminDashboard from "./pages/admin-dashboard";
+import AdminDashboard from "./pages/admin/admin-dashboard";
 import UsersIndex from "./pages/users/index";
 
 // Layouts & Guards
-import AdminLayout from "./components/layout/dashboard-layout"; // 👈 Import the layout
-import ProtectedRoute from "./components/protected-route";
-import AdminRoute from "./components/admin-route";
+import UserLayout from "./components/layout/user/user-layout";
+import AdminLayout from "./components/layout/admin/admin-layout";
+import ProtectedRoute from "./route/protected-route";
+import AdminRoute from "./route/admin-route";
 
-import "./App.css";
+// Error Pages
+import NotFound from "./components/error/not-found";
 
 function App() {
   return (
     <Routes>
-      {/* --- PUBLIC ROUTES --- */}
+      {/* PUBLIC ROUTES */}
       <Route path="/" element={<WelcomePage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/sign-up" element={<SignUp />} />
 
-      {/* --- USER ROUTE --- */}
-      <Route 
-        path="/dashboard" 
+      {/* USER PORTAL */}
+      <Route
+        path="/dashboard"
         element={
           <ProtectedRoute>
-            <UserDashboard />
+            <UserLayout />
           </ProtectedRoute>
-        } 
-      />
-
-      {/* --- ADMIN ROUTES (Nested inside AdminLayout) --- */}
-      <Route 
-        path="/admin" 
-        element={
-          <AdminRoute>
-            <AdminLayout /> {/* 👈 The Sidebar is inside this layout */}
-          </AdminRoute>
-        } 
+        }
       >
-        {/* When you go to /admin, it shows AdminDashboard inside the Outlet */}
-        <Route index element={<AdminDashboard />} />
-        
-        {/* When you go to /admin/users, it shows UsersIndex inside the Outlet */}
-        <Route path="users" element={<UsersIndex />} />
-        
-        {/* You can add more admin pages here easily later! */}
-        {/* <Route path="bookings" element={<BookingsIndex />} /> */}
-        {/* <Route path="services" element={<ServicesIndex />} /> */}
+        <Route index element={<UserDashboard />} />
+        {/* Other user routes go here */}
       </Route>
 
-      {/* Fallback for any unknown URL */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* ADMIN PORTAL */}
+      <Route
+        path="/admin/dashboard"
+        element={
+          <AdminRoute>
+            <AdminLayout />
+          </AdminRoute>
+        }
+      >
+        <Route index element={<AdminDashboard />} />
+
+        {/* 👇 404 inside the Admin Layout */}
+        <Route path="*" element={<NotFound />} />
+      </Route>
+
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminLayout />
+          </AdminRoute>
+        }
+      >
+        <Route path="users" element={<UsersIndex />} />
+
+        {/* 👇 404 inside the Admin Layout */}
+        <Route path="*" element={<NotFound />} />
+      </Route>
+
+      {/* 👇 GLOBAL 404 (For logged-in Users) */}
+      {/* Wrapped in UserLayout so they keep the user sidebar if they get lost */}
+      <Route
+        path="*"
+        element={
+          <ProtectedRoute>
+            <UserLayout>
+              <NotFound />
+            </UserLayout>
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   );
 }

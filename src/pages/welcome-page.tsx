@@ -3,10 +3,10 @@ import Navbar from "../components/ui/navbar";
 import Footer from "../components/ui/footer";
 
 // Sections
-import Home from "../components/ui/sections/home";
-import Gallery from "../components/ui/sections/gallery";
-import Services from "../components/ui/sections/services";
-import Contact from "../components/ui/sections/contact";
+import Home from "./sections/home";
+import Gallery from "./sections/gallery";
+import Services from "./sections/services";
+import Contact from "./sections/contact";
 
 // Hooks
 import { useScrollAnimation } from "../hooks/useScrollAnimation";

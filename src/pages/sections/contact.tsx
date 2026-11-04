@@ -1,4 +1,4 @@
-import SocMedCard from "../../socmed-card";
+import SocMedCard from "../../components/socmed-card";
 
 export default function Contact() {
   const contacts = [

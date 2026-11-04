@@ -1,10 +1,10 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '../config/supabaseClient';
-import type { User, Session } from '@supabase/supabase-js';
+import { createContext, useContext, useEffect, useState } from "react";
+import { supabase } from "../config/supabaseClient";
+import type { User, Session } from "@supabase/supabase-js";
 
 interface AuthContextType {
   user: User | null;
-  profile: any | null; 
+  profile: any | null;
   loading: boolean;
   signOut: () => Promise<void>;
 }
@@ -14,32 +14,23 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Starts true on initial mount
 
   const fetchProfile = async (userId: string) => {
     try {
-      // 👇 Querying the raw table and joining the roles table
       const { data, error } = await supabase
-        .from('user_profiles')
-        .select(`
-          *,
-          roles ( name )
-        `)
-        .eq('id', userId)
+        .from("user_profiles")
+        .select(`*, roles ( name )`)
+        .eq("id", userId)
         .single();
 
-      if (error) {
-        console.error("Error fetching profile:", error.message);
-        return null;
-      }
+      if (error) return null;
 
-      // Flatten the object so React can use profile.role_name
       return {
         ...data,
-        role_name: data.roles?.name || "user"
+        role_name: data.roles?.name || "user",
       };
     } catch (err) {
-      console.error("Unexpected error:", err);
       return null;
     }
   };
@@ -47,30 +38,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isMounted = true;
 
+    // 1. Initial Check on Page Load / Refresh
     const initializeAuth = async () => {
-      setLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!isMounted) return;
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-      if (session?.user) {
-        setUser(session.user);
-        const userProfile = await fetchProfile(session.user.id);
-        if (isMounted) setProfile(userProfile);
-      } else {
-        setUser(null);
-        setProfile(null);
+        if (session?.user) {
+          setUser(session.user);
+          const userProfile = await fetchProfile(session.user.id);
+          if (isMounted) setProfile(userProfile);
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        // Once loaded, we NEVER set loading back to true for route changes
+        if (isMounted) setLoading(false);
       }
-      if (isMounted) setLoading(false);
     };
 
     initializeAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    // 2. Listen for Auth Changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(
       async (_event: string, session: Session | null) => {
         if (!isMounted) return;
-        setLoading(true);
-        
+
+        // 👇 DO NOT setLoading(true) here!
+        // This prevents the flicker when navigating between pages.
+
         if (session?.user) {
           setUser(session.user);
           const userProfile = await fetchProfile(session.user.id);
@@ -79,8 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           setProfile(null);
         }
-        if (isMounted) setLoading(false);
-      }
+      },
     );
 
     return () => {
@@ -103,7 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

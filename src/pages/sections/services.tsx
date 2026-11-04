@@ -1,4 +1,4 @@
-import ServiceCard from "../../services-card";
+import ServiceCard from "../../components/services-card";
 
 export default function Services() {
   const services = [

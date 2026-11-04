@@ -7,7 +7,6 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center text-white">
-        Loading...
       </div>
     );
   }
@@ -16,6 +15,5 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     return <Navigate to="/login" replace />;
   }
 
-  // Removed the admin redirect here! 
   return <>{children}</>;
 }

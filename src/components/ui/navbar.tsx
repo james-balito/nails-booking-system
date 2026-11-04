@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/authContext"; // 👈 Import Auth Context
+import { useAuth } from "../../context/authContext";
 import supabase from "../../config/supabaseClient";
 
 export default function Navbar() {
@@ -18,10 +18,9 @@ export default function Navbar() {
     { name: "Contact", href: "#contact" },
   ];
 
-  // Determine the dashboard route based on role
-  const dashboardRoute = profile?.role_name === "admin" ? "/admin" : "/dashboard";
+  // 👇 FIXED: Admin goes to /admin, User goes to /dashboard
+  const dashboardRoute = profile?.role_name === "admin" ? "/admin/dashboard" : "/dashboard";
 
-  // Get Avatar or Initials
   const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
   const displayName = profile?.full_name || user?.user_metadata?.name || "User";
 
@@ -70,8 +69,8 @@ export default function Navbar() {
 
         {/* Desktop CTA / Profile */}
         <div className="hidden lg:flex space-x-6 items-center relative">
+          {/* 👇 CONDITIONAL RENDERING: If user exists, show profile. If not, show Login/Book */}
           {user ? (
-            // 👇 LOGGED IN: Show Profile Avatar & Dropdown
             <div className="relative" ref={profileMenuRef}>
               <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
@@ -110,7 +109,7 @@ export default function Navbar() {
               )}
             </div>
           ) : (
-            // 👇 LOGGED OUT: Show Login & Book Now
+            // 👇 THIS IS HIDDEN WHEN USER IS LOGGED IN
             <>
               <Link
                 to="/login"
@@ -204,6 +203,7 @@ export default function Navbar() {
               </button>
             </>
           ) : (
+            // 👇 HIDDEN ON MOBILE WHEN LOGGED IN
             <>
               <Link
                 to="/login"
