@@ -69,7 +69,7 @@ export default function Login() {
         // We use a tiny timeout so the user sees the success message
         setTimeout(() => {
           if (roleName === "admin") {
-            navigate("/admin", { replace: true });
+            navigate("/admin/dashboard", { replace: true });
           } else {
             navigate("/dashboard", { replace: true });
           }

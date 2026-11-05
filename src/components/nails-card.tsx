@@ -13,20 +13,21 @@ export default function NailsCard({
 }: NailsCardProps) {
   return (
     <div
-      // 👇 Added "nails-card opacity-0" for GSAP targeting
-      className="nails-card flex flex-col rounded-2xl overflow-hidden border-2 border-white/10 hover:border-[#FF007F]/50 group transition-all duration-300 cursor-pointer h-full bg-[#0A0A0A] animate-in fade-in slide-in-from-bottom-4"
+      // 👇 Added "nails-card" and "opacity-0" for GSAP targeting
+      className="nails-card flex flex-col rounded-2xl overflow-hidden border-2 border-white/10 hover:border-[#FF007F]/50 group transition-all duration-300 cursor-pointer h-full bg-[#0A0A0A] opacity-0"
     >
-      {/* Image Container */}
-      <div className="overflow-hidden relative w-full">
+      {/* Image Container - Enforced 3:4 Aspect Ratio */}
+      <div className="overflow-hidden relative w-full aspect-[3/4]">
         <img
           src={img}
           alt={category}
-          className="w-full h-48 sm:h-56 md:h-64 lg:h-72 object-cover block group-hover:scale-105 transition-transform duration-500"
+          loading="lazy"
+          className="w-full h-full object-cover block group-hover:scale-105 transition-transform duration-500"
         />
       </div>
 
       {/* Content Container */}
-      <div className="p-5 sm:p-6 md:p-7 lg:p-8 flex flex-col flex-graow">
+      <div className="p-5 sm:p-6 md:p-7 flex flex-col flex-grow">
         {/* Category */}
         <span className="text-white/60 font-bold text-xs sm:text-sm uppercase tracking-wider mb-2">
           {category}

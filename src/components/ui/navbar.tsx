@@ -1,39 +1,42 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "../../context/authContext";
-import supabase from "../../config/supabaseClient";
+import nobglogo from "../../assets/nobglogo.png";
 
-export default function Navbar() {
+interface NavbarProps {
+  onLogoutClick: () => void;
+}
+
+export default function Navbar({ onLogoutClick }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  
+
   const { user, profile } = useAuth();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
   const navLinks = [
-    { name: "Home", href: "#home" },
     { name: "Gallery", href: "#gallery" },
+    { name: "Testimonials", href: "#testimonials" },
     { name: "Services", href: "#services" },
     { name: "Contact", href: "#contact" },
   ];
 
   // 👇 FIXED: Admin goes to /admin, User goes to /dashboard
-  const dashboardRoute = profile?.role_name === "admin" ? "/admin/dashboard" : "/dashboard";
+  const dashboardRoute =
+    profile?.role_name === "admin" ? "/admin/dashboard" : "/dashboard";
 
-  const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  const avatarUrl =
+    user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
   const displayName = profile?.full_name || user?.user_metadata?.name || "User";
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setIsProfileOpen(false);
-    navigate("/");
-  };
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target as Node)
+      ) {
         setIsProfileOpen(false);
       }
     }
@@ -43,14 +46,16 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-[9000] flex flex-col w-full px-6 xl:px-75 py-4 bg-[#0A0A0A]/90 backdrop-blur-md border-b border-white/10">
-      
       {/* --- TOP ROW --- */}
       <div className="flex justify-between items-center w-full">
-        
         {/* Logo */}
         <div className="text-[#F9FAFB] hover:text-[#FF007F] playfair-display-header font-bold text-2xl md:text-3xl transition-colors duration-200 z-50">
-          <a href="#home" onClick={() => setIsOpen(false)}>
-            Glossx.claw
+          <a href="#home">
+            <img
+              src={nobglogo}
+              alt="Glossx Logo"
+              className={`h-11 w-18 md:h-12 md:w-14 xl:h-13 xl:w-20 hover:opacity-80`}
+            />
           </a>
         </div>
 
@@ -77,7 +82,11 @@ export default function Navbar() {
                 className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-white/20 hover:border-[#FF007F] transition-colors overflow-hidden focus:outline-none"
               >
                 {avatarUrl ? (
-                  <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                  <img
+                    src={avatarUrl}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <span className="text-[#FF007F] font-bold text-lg">
                     {displayName.charAt(0).toUpperCase()}
@@ -89,8 +98,12 @@ export default function Navbar() {
               {isProfileOpen && (
                 <div className="absolute right-0 mt-3 w-48 bg-[#1A1A1A] border border-white/10 rounded-xl shadow-2xl py-2 flex flex-col">
                   <div className="px-4 py-2 border-b border-white/10 mb-1">
-                    <p className="text-sm text-white font-semibold truncate">{displayName}</p>
-                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                    <p className="text-sm text-white font-semibold truncate">
+                      {displayName}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {user.email}
+                    </p>
                   </div>
                   <Link
                     to={dashboardRoute}
@@ -100,7 +113,7 @@ export default function Navbar() {
                     Go to Dashboard
                   </Link>
                   <button
-                    onClick={handleLogout}
+                    onClick={() => onLogoutClick()}
                     className="px-4 py-2 text-sm text-red-400 hover:bg-white/5 hover:text-red-300 text-left transition-colors"
                   >
                     Log Out
@@ -131,9 +144,16 @@ export default function Navbar() {
         <div className="flex items-center gap-4 lg:hidden z-50">
           {/* Mobile Profile Avatar (Small) */}
           {user && (
-            <Link to={dashboardRoute} className="w-8 h-8 rounded-full border border-white/20 overflow-hidden flex items-center justify-center">
+            <Link
+              to={dashboardRoute}
+              className="w-8 h-8 rounded-full border border-white/20 overflow-hidden flex items-center justify-center"
+            >
               {avatarUrl ? (
-                <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                <img
+                  src={avatarUrl}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 <span className="text-[#FF007F] font-bold text-sm">
                   {displayName.charAt(0).toUpperCase()}
@@ -141,18 +161,35 @@ export default function Navbar() {
               )}
             </Link>
           )}
-          
-          <button
-            className="text-white p-2"
-            onClick={() => setIsOpen(!isOpen)}
-          >
+
+          <button className="text-white p-2" onClick={() => setIsOpen(!isOpen)}>
             {isOpen ? (
-              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M18 6 6 18" />
                 <path d="m6 6 12 12" />
               </svg>
             ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M4 5h16" />
                 <path d="M4 12h16" />
                 <path d="M4 19h16" />
@@ -196,7 +233,9 @@ export default function Navbar() {
                 My Dashboard
               </Link>
               <button
-                onClick={handleLogout}
+                onClick={() => {
+                  onLogoutClick();
+                }}
                 className="w-full text-center text-red-400 font-semibold text-sm tracking-widest uppercase py-2"
               >
                 Log Out
