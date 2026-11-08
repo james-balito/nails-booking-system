@@ -2,48 +2,61 @@ interface NailsCardProps {
   title: string;
   description: string;
   img: string;
-  category: string;
+  shape: string;
+  colors: string[];
+  designs: string[];
+  onClick?: () => void; // 👈 Added onClick
 }
 
 export default function NailsCard({
   title,
   img,
   description,
-  category,
+  shape,
+  colors,
+  designs,
+  onClick,
 }: NailsCardProps) {
+  const allTags = [shape, ...colors, ...designs];
+
   return (
     <div
-      // 👇 Added "nails-card" and "opacity-0" for GSAP targeting
+      onClick={(e) => {
+        e.preventDefault(); // 👈 Stop browser default behavior
+        e.stopPropagation(); // 👈 Stop event from bubbling up
+        if (onClick) onClick();
+      }}
       className="nails-card flex flex-col rounded-2xl overflow-hidden border-2 border-white/10 hover:border-[#FF007F]/50 group transition-all duration-300 cursor-pointer h-full bg-[#0A0A0A] opacity-0"
     >
-      {/* Image Container - Enforced 3:4 Aspect Ratio */}
       <div className="overflow-hidden relative w-full aspect-[3/4]">
         <img
           src={img}
-          alt={category}
+          alt={title}
           loading="lazy"
           className="w-full h-full object-cover block group-hover:scale-105 transition-transform duration-500"
         />
       </div>
 
-      {/* Content Container */}
       <div className="p-5 sm:p-6 md:p-7 flex flex-col flex-grow">
-        {/* Category */}
-        <span className="text-white/60 font-bold text-xs sm:text-sm uppercase tracking-wider mb-2">
-          {category}
-        </span>
+        <div className="flex flex-wrap items-center gap-1.5 mb-3">
+          {allTags.map((tag, index) => (
+            <span
+              key={index}
+              className="text-white/80 font-bold text-[9px] sm:text-[10px] uppercase tracking-wider px-2 py-1 bg-white/5 border border-white/10 rounded"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
 
-        {/* Title */}
         <h1 className="cormorant-garamond-header text-white text-xl sm:text-2xl md:text-2xl lg:text-3xl mb-3 group-hover:text-[#FF007F] transition-colors duration-200 line-clamp-1">
           {title}
         </h1>
 
-        {/* Description */}
         <span className="text-white/60 font-thin text-xs sm:text-sm tracking-wider border-b-[0.5px] border-white/20 pb-5 mb-5 line-clamp-2">
           {description}
         </span>
 
-        {/* Footer (Details & Button) */}
         <div className="flex justify-between items-center mt-auto gap-2">
           <span className="text-white/60 font-bold text-xs sm:text-sm">
             Details

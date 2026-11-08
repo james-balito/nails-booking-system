@@ -13,7 +13,7 @@ export const nailsImages = Object.keys(imageModules)
   .map((key, index) => {
     // 👇 FIXED: Just remove the "./" and the file extension
     const filename = key.replace('./', '').replace(/\.(png|jpg|jpeg|webp|avif)$/, '');
-    
+
     // 👇 DEBUG LOG: Uncomment this to see exactly what is happening in your browser console
     // console.log("Glob Key:", key, "| Extracted Filename:", filename);
 
@@ -30,6 +30,8 @@ export const nailsImages = Object.keys(imageModules)
       // If you forgot to add data for an image, these fallbacks prevent crashing
       title: data?.title || `GlossX Set #${index + 1}`,
       description: data?.description || "Custom handcrafted nail design.",
-      category: data?.category || "Custom",
+    shape: Array.isArray(data?.shape) ? data.shape[0] : (data?.shape || "Custom Shape"),
+      colors: data?.colors || ["Custom Color"],
+      designs: data?.designs || ["Custom Design"],
     };
   });
