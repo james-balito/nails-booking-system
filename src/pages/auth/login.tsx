@@ -19,14 +19,10 @@ export default function Login() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          // 👇 Redirects back to the home page.
-          // Our AuthContext + App.tsx will catch the user and route them
-          // to /admin or /dashboard based on their role automatically!
           redirectTo: `${window.location.origin}/dashboard`,
         },
       });
       if (error) throw error;
-      // Note: If successful, the browser redirects to Google, so we don't setLoading(false) here.
     } catch (error: any) {
       setMessage(`❌ ${error.message}`);
       setGoogleLoading(false);
@@ -40,7 +36,6 @@ export default function Login() {
     setMessage("");
 
     try {
-      // Step A: Authenticate
       const {
         data: { user },
         error: authError,
@@ -51,7 +46,6 @@ export default function Login() {
 
       if (authError) throw authError;
 
-      // Step B: Fetch Role to route them correctly
       if (user) {
         const { data: profile, error: profileError } = await supabase
           .from("user_profiles")
@@ -62,11 +56,8 @@ export default function Login() {
         if (profileError) throw profileError;
 
         const roleName = profile?.roles?.name || "user";
-
-        // Step C: Route based on role
         setMessage("✅ Logged in successfully!");
 
-        // We use a tiny timeout so the user sees the success message
         setTimeout(() => {
           if (roleName === "admin") {
             navigate("/admin/dashboard", { replace: true });
@@ -76,7 +67,6 @@ export default function Login() {
         }, 800);
       }
     } catch (error: any) {
-      // Handle specific Supabase errors nicely
       if (error.message.includes("Invalid login credentials")) {
         setMessage("❌ Incorrect email or password.");
       } else {
@@ -87,7 +77,21 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-white flex items-center justify-center px-6 py-12">
+    <div className="min-h-screen bg-[#0A0A0A] text-white flex flex-col items-center justify-center px-6 py-12 relative">
+      
+      {/* 👇 BACK TO HOME BUTTON */}
+      <Link 
+        to="/" 
+        className="absolute top-6 left-6 sm:top-8 sm:left-8 flex items-center gap-2 text-sm font-semibold text-gray-400 hover:text-white transition-colors group"
+      >
+        <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-0.5 transition-transform">
+            <path d="m15 18-6-6 6-6"/>
+          </svg>
+        </div>
+        Back to Home
+      </Link>
+
       <div className="w-full max-w-md bg-[#1A1A1A] border border-white/10 p-8 rounded-2xl shadow-2xl">
         <h1 className="playfair-display-header text-3xl font-bold text-center mb-2">
           Welcome Back
@@ -108,8 +112,6 @@ export default function Login() {
             {message}
           </div>
         )}
-
-        {/* Google Login */}
 
         {/* Email Login */}
         <form onSubmit={handleEmailLogin} className="flex flex-col gap-4">
@@ -166,9 +168,10 @@ export default function Login() {
           </div>
 
           <button
+            type="button" // 👈 Added type="button" so it doesn't submit the form
             onClick={handleGoogleLogin}
             disabled={googleLoading}
-            className="w-full flex items-center justify-center gap-3 bg-white text-black font-semibold py-3 rounded-lg hover:bg-gray-100 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mb-6"
+            className="w-full flex items-center justify-center gap-3 bg-white text-black font-semibold py-3 rounded-lg hover:bg-gray-100 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mb-2"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

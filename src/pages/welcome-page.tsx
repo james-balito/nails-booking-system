@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Navbar from "../components/ui/navbar";
 import Footer from "../components/ui/footer";
 import LogoutModal from "../components/ui/logout-modal";
@@ -15,10 +15,28 @@ export default function WelcomePage() {
   useScrollAnimation();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
+  // 👇 Trigger state for the Gallery's slide-over
+  const [triggerOpenBooking, setTriggerOpenBooking] = useState(false);
+  const [triggerId, setTriggerId] = useState(0);
+
+  const galleryRef = useRef<HTMLElement>(null);
+
+  const handleBookClick = () => {
+    setTriggerOpenBooking(true);
+    setTriggerId((prev) => prev + 1); // Forces a fresh trigger
+  };
+
+  const scrollToGallery = () => {
+    galleryRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
-    <div className="bg-[#0A0A0A]">
+    <div className="bg-[#0A0A0A] pb-20 xl:pb-0">
       <section id="nav" className="sticky top-0 z-50">
-        <Navbar onLogoutClick={() => setIsLogoutModalOpen(true)} />
+        <Navbar
+          onLogoutClick={() => setIsLogoutModalOpen(true)}
+          onBookClick={handleBookClick}
+        />
       </section>
 
       <section id="home">
@@ -27,29 +45,27 @@ export default function WelcomePage() {
 
       <section
         id="gallery"
+        ref={galleryRef}
         className="min-h-screen flex justify-center items-start"
       >
-        <Gallery />
+        {/* 👇 Pass triggerOpenBooking */}
+        <Gallery key={triggerId} triggerOpenBooking={triggerOpenBooking} onScrollToGallery={scrollToGallery} />
       </section>
 
       <section
         id="testimonials"
         className="min-h-screen flex justify-center items-start"
       >
-        <Testimonials />
+        <Testimonials  onBookClick = {handleBookClick}/>
       </section>
-
       <section id="services">
         <Services />
       </section>
-      
       <section id="contact">
         <Contact />
       </section>
 
       <Footer />
-
-      {/* Rendered at page root — escapes the sticky <section> stacking context */}
       <LogoutModal
         isOpen={isLogoutModalOpen}
         onClose={() => setIsLogoutModalOpen(false)}

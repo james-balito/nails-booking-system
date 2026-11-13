@@ -20,6 +20,9 @@ import AdminRoute from "./route/admin-route";
 // Error Pages
 import NotFound from "./components/error/not-found";
 
+// Test Pages
+import TestConnection from "./testpage/supabase-test-connection";
+
 function App() {
   return (
     <Routes>
@@ -27,6 +30,9 @@ function App() {
       <Route path="/" element={<WelcomePage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/sign-up" element={<SignUp />} />
+
+{/* Test Connection */}
+<Route path = "/test" element={<TestConnection />}/>
 
       {/* USER PORTAL */}
       <Route
