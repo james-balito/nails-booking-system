@@ -2,7 +2,12 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import Card from "../../components/card";
 
-export default function Home() {
+interface HomeProps {
+  onBookClick: () => void;
+}
+
+
+export default function Home({onBookClick}: HomeProps) {
   const titleRef = useRef<HTMLHeadingElement>(null);
   const subRef = useRef<HTMLParagraphElement>(null);
   const buttonsRef = useRef<HTMLDivElement>(null);
@@ -126,6 +131,7 @@ export default function Home() {
         >
           <button
             type="button"
+            onClick = {() =>  onBookClick()}
             className="w-full sm:w-auto flex justify-center px-6 py-4 sm:px-9 sm:py-5 items-center uppercase bg-[#FF007F] inter-subcaption text-white/90 tracking-wider font-bold rounded-3xl shadow-[0_0_30px_rgba(255,0,127,0.4)] hover:shadow-[0_0_50px_rgba(255,0,127,0.8)] hover:-translate-y-1 transition-all duration-200 cursor-pointer group"
           >
             <span className="mr-2">Book Now</span>
@@ -180,6 +186,7 @@ export default function Home() {
               title={card.title}
               description={card.description}
             />
+            
           ))}
         </div>
       </div>

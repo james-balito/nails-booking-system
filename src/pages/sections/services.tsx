@@ -1,6 +1,10 @@
 import ServiceCard from "../../components/services-card";
 
-export default function Services() {
+interface ServiceProps {
+  onBookClick?: (serviceName: string) => void;
+}
+
+export default function Services({ onBookClick }: ServiceProps) {
   const services = [
     {
       name: "Nail Art Designs",
@@ -12,9 +16,9 @@ export default function Services() {
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
           className="lucide lucide-gem preview-icon"
         >
           <path d="M10.5 3 8 9l4 13 4-13-2.5-6" />
@@ -36,9 +40,9 @@ export default function Services() {
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
           className="lucide lucide-brush-cleaning preview-icon"
         >
           <path d="m16 22-1-4" />
@@ -52,11 +56,11 @@ export default function Services() {
       tagline: "Prioritize your nail health.",
     },
   ];
+
   return (
-    <div className={`bg-[#1A1A1A] px-10 py-15 xl:px-95 xl:py-25 border-y-2 border-white/10`}>
+    <div className="bg-[#1A1A1A] px-6 sm:px-10 xl:px-24 2xl:px-40 py-16 xl:py-24 border-y-2 border-white/10">
       <div className="flex flex-col items-center">
         <span className="px-2 text-[#FF007F] flex items-center uppercase font-bold text-sm lg:text-lg">
-          {" "}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="15"
@@ -86,15 +90,15 @@ export default function Services() {
         </p>
       </div>
 
-      <div
-        className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-5 mt-10`}
-      >
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-10 sm:px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-40 ">
         {services.map((service) => (
           <ServiceCard
+            key={service.name}
             icon={service.icon}
             title={service.name}
             description={service.description}
             tagline={service.tagline}
+            onBookClick={() => onBookClick?.(service.name)}
           />
         ))}
       </div>

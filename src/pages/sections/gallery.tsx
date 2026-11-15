@@ -17,17 +17,31 @@ interface NailData {
   designs: string[];
 }
 
+export type BookingIntent = {
+  target: "Selection" | "BespokeSelection" | "Removal" | "Custom";
+  serviceName?: string; // chosen service label from Services
+  nonce: number; // ensures repeated clicks re-fire
+};
+
 interface GalleryProps {
-  triggerOpenBooking?: boolean;
+  bookingIntent?: BookingIntent | null;
+  onIntentHandled?: () => void;
   onScrollToGallery?: () => void;
 }
+
+// Booking flow is now three separate pieces of state:
+// - bookingScreen: which screen/modal is showing (or null)
+// - selectedDesign: the design payload when a specific look is being booked
+// - selectedService: the service label shown in the banner
+type BookingScreen = "Selection" | "BespokeSelection" | "Removal" | "Custom" | null;
 
 // Custom Hook for exit animations
 function useModalAnimation(isOpen: boolean, duration = 300) {
   const [isVisible, setIsVisible] = useState(isOpen);
   useEffect(() => {
-    if (isOpen) setIsVisible(true);
-    else {
+    if (isOpen) {
+      setIsVisible(true);
+    } else {
       const timer = setTimeout(() => setIsVisible(false), duration);
       return () => clearTimeout(timer);
     }
@@ -36,7 +50,8 @@ function useModalAnimation(isOpen: boolean, duration = 300) {
 }
 
 export default function Gallery({
-  triggerOpenBooking,
+  bookingIntent,
+  onIntentHandled,
   onScrollToGallery,
 }: GalleryProps) {
   const navigate = useNavigate();
@@ -48,10 +63,14 @@ export default function Gallery({
 
   // Modal States
   const [selectedNail, setSelectedNail] = useState<NailData | null>(null);
-  const [bookingState, setBookingState] = useState<
-    "Selection" | NailData | "Custom" | null
-  >(null);
+
+  // Booking flow state — split by concern
+  const [bookingScreen, setBookingScreen] = useState<BookingScreen>(null);
+  const [selectedDesign, setSelectedDesign] = useState<NailData | null>(null);
+  const [selectedService, setSelectedService] = useState<string | null>(null);
+
   const [showToast, setShowToast] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   // Booking Form States
   const [selectedDate, setSelectedDate] = useState("");
@@ -60,11 +79,11 @@ export default function Gallery({
   const [customImage, setCustomImage] = useState<File | null>(null);
 
   // Availability & Submit States
-  const [bookedTimes, setBookedTimes] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const isBookingOpen = bookingScreen !== null || selectedDesign !== null;
   const isDetailsVisible = useModalAnimation(!!selectedNail);
-  const isBookingVisible = useModalAnimation(!!bookingState);
+  const isBookingVisible = useModalAnimation(isBookingOpen);
 
   const gridRef = useRef<HTMLDivElement>(null);
 
@@ -81,27 +100,29 @@ export default function Gallery({
   // Extract Unique Filters
   const allShapes = useMemo(
     () => Array.from(new Set(images.map((img) => img.shape))),
-    [],
+    []
   );
   const allColors = useMemo(
     () => Array.from(new Set(images.flatMap((img) => img.colors))),
-    [],
+    []
   );
   const allDesigns = useMemo(
     () => Array.from(new Set(images.flatMap((img) => img.designs))),
-    [],
+    []
   );
 
   // Filter Logic
-  const filteredImages = images.filter((image) => {
-    if (selectedFilters.length === 0) return true;
-    return selectedFilters.every((filterValue) => {
-      if (image.shape === filterValue) return true;
-      if (image.colors.includes(filterValue)) return true;
-      if (image.designs.includes(filterValue)) return true;
-      return false;
-    });
-  });
+  const filteredImages = useMemo(() => {
+    if (selectedFilters.length === 0) return images;
+    return images.filter((image) =>
+      selectedFilters.every((filterValue) => {
+        if (image.shape === filterValue) return true;
+        if (image.colors.includes(filterValue)) return true;
+        if (image.designs.includes(filterValue)) return true;
+        return false;
+      })
+    );
+  }, [selectedFilters]);
 
   const visibleImages = filteredImages.slice(0, visibleCount);
 
@@ -109,47 +130,80 @@ export default function Gallery({
     setSelectedFilters((prev) =>
       prev.includes(value)
         ? prev.filter((item) => item !== value)
-        : [...prev, value],
+        : [...prev, value]
     );
     setVisibleCount(12);
   };
 
-  // 👇 Listen for Navbar Trigger (No Auth Check Here)
-  useEffect(() => {
-    if (triggerOpenBooking) {
-      setBookingState("Selection");
-    }
-  }, [triggerOpenBooking]);
-
-  // 👇 Allow Anonymous Users to Open the Booking Modal
-  const handleOpenBooking = (nail: NailData | "Custom") => {
-    setBookingState(nail);
+  // Reset everything
+  const resetBooking = () => {
+    setBookingScreen(null);
+    setSelectedDesign(null);
+    setSelectedService(null);
+    setSelectedDate("");
+    setSelectedTime("");
+    setNotes("");
+    setCustomImage(null);
+    setShowCancelConfirm(false);
   };
 
-  // Fetch Availability
+  // Go back to main menu
+  const removeSelection = () => {
+    setBookingScreen("Selection");
+    setSelectedDesign(null);
+    setSelectedService(null);
+    setSelectedDate("");
+    setSelectedTime("");
+    setNotes("");
+    setCustomImage(null);
+  };
+
+  // Handle external booking intents (Navbar, Home, Services, Testimonials)
   useEffect(() => {
-    const fetchAvailability = async () => {
-      if (!selectedDate) return;
+    if (!bookingIntent) return;
 
-      const { data } = await supabase
-        .from("bookings")
-        .select("time")
-        .eq("date", selectedDate)
-        .neq("status", "cancelled");
+    setSelectedDesign(null);
+    setBookingScreen(bookingIntent.target);
+    setSelectedService(bookingIntent.serviceName ?? null);
+    setShowCancelConfirm(false);
 
-      if (data) {
-        setBookedTimes(data.map((b) => b.time));
-        setSelectedTime("");
-      }
-    };
-    fetchAvailability();
-  }, [selectedDate]);
+    // Acknowledge so the same nonce isn't replayed on re-render
+    onIntentHandled?.();
+  }, [bookingIntent, onIntentHandled]);
 
-  // 👇 Handle Form Submit (Auth Guard Lives Here)
+  // Open booking for a specific design or fixed screen
+  const handleOpenBooking = (nail: NailData | "Custom" | "Removal") => {
+    if (typeof nail === "string") {
+      setSelectedDesign(null);
+      setBookingScreen(nail);
+      setSelectedService(
+        nail === "Removal"
+          ? "Nail Removal"
+          : nail === "Custom"
+          ? "Custom Nail Set"
+          : null
+      );
+    } else {
+      setSelectedDesign(nail);
+      setBookingScreen(null);
+      setSelectedService("Nail Art Designs");
+    }
+    setShowCancelConfirm(false);
+  };
+
+  // Handle Close Attempt
+  const handleCloseAttempt = () => {
+    if (selectedDate || selectedTime || notes || customImage) {
+      setShowCancelConfirm(true);
+    } else {
+      resetBooking();
+    }
+  };
+
+  // Handle Submit
   const handleConfirmBooking = async () => {
-    // 1. AUTH GUARD: Only triggers when they try to submit
     if (!user) {
-      setBookingState(null);
+      resetBooking();
       setShowToast(true);
       setTimeout(() => {
         setShowToast(false);
@@ -158,18 +212,16 @@ export default function Gallery({
       return;
     }
 
-    // 2. Form Validation
     if (!selectedDate || !selectedTime) {
       alert("Please select both a date and a time.");
       return;
     }
 
     setIsSubmitting(true);
-    let uploadedImageUrl = null;
+    let uploadedImageUrl: string | null = null;
 
     try {
-      // Upload custom image if applicable
-      if (bookingState === "Custom" && customImage) {
+      if (bookingScreen === "Custom" && customImage) {
         const fileExt = customImage.name.split(".").pop();
         const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
 
@@ -186,13 +238,14 @@ export default function Gallery({
         uploadedImageUrl = publicUrl;
       }
 
-      // Save Booking
+      // design_id is only set when a specific design was chosen
+      const designId = selectedDesign ? selectedDesign.id : null;
+
       const { error: dbError } = await supabase.from("bookings").insert({
         date: selectedDate,
         time: selectedTime,
         notes: notes,
-        design_id:
-          bookingState === "Custom" ? null : (bookingState as NailData)?.id,
+        design_id: designId,
         custom_image_url: uploadedImageUrl,
         status: "pending",
       });
@@ -200,11 +253,7 @@ export default function Gallery({
       if (dbError) throw dbError;
 
       alert("Booking request submitted! We will review and confirm shortly.");
-      setBookingState(null);
-      setSelectedDate("");
-      setSelectedTime("");
-      setNotes("");
-      setCustomImage(null);
+      resetBooking();
     } catch (error: any) {
       alert("Error booking: " + error.message);
     } finally {
@@ -212,13 +261,12 @@ export default function Gallery({
     }
   };
 
-  // GSAP Stagger Animation
+  // GSAP Animation
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!gridRef.current) return;
-      const cardsToAnimate = gridRef.current.querySelectorAll(
-        ".nails-card.opacity-0",
-      );
+      const cardsToAnimate =
+        gridRef.current.querySelectorAll(".nails-card.opacity-0");
       if (cardsToAnimate.length > 0) {
         gsap.to(cardsToAnimate, {
           y: 0,
@@ -229,13 +277,38 @@ export default function Gallery({
           stagger: 0.1,
           onComplete: () =>
             cardsToAnimate.forEach((card) =>
-              card.classList.remove("opacity-0"),
+              card.classList.remove("opacity-0")
             ),
         });
       }
     }, 50);
     return () => clearTimeout(timer);
   }, [visibleCount, selectedFilters]);
+
+  // Derive the header title from current state
+  const bookingHeaderTitle = selectedDesign
+    ? `Book ${selectedDesign.title}`
+    : selectedService
+    ? selectedService
+    : bookingScreen === "Selection"
+    ? "New Booking"
+    : bookingScreen === "BespokeSelection"
+    ? "Bespoke Nails"
+    : bookingScreen === "Removal"
+    ? "Nail Removal"
+    : bookingScreen === "Custom"
+    ? "Custom Set"
+    : "";
+
+  // Derive whether the details form is showing (everything except Selection/BespokeSelection)
+  const isFormScreen =
+    selectedDesign !== null ||
+    (bookingScreen !== null &&
+      bookingScreen !== "Selection" &&
+      bookingScreen !== "BespokeSelection");
+
+  const isCustomScreen = bookingScreen === "Custom";
+  const isRemovalScreen = bookingScreen === "Removal";
 
   return (
     <div className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-10 xl:px-16 max-w-[1600px] mx-auto relative">
@@ -274,24 +347,24 @@ export default function Gallery({
       {isBookingVisible && (
         <div className="fixed inset-0 z-[9999] flex justify-end overflow-hidden">
           <div
-            className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${bookingState ? "opacity-100" : "opacity-0"}`}
-            onClick={() => setBookingState(null)}
+            className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
+              isBookingOpen ? "opacity-100" : "opacity-0"
+            }`}
+            onClick={handleCloseAttempt}
           />
 
           <div
-            className={`relative w-full max-w-md bg-[#0A0A0A] h-full shadow-2xl border-l border-white/10 flex flex-col transition-transform duration-300 ease-in-out ${bookingState ? "translate-x-0" : "translate-x-full"}`}
+            className={`relative w-full max-w-md bg-[#0A0A0A] h-full shadow-2xl border-l border-white/10 flex flex-col transition-transform duration-300 ease-in-out ${
+              isBookingOpen ? "translate-x-0" : "translate-x-full"
+            }`}
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-white/10 bg-[#1A1A1A]">
               <h2 className="text-xl font-bold text-white playfair-display-header">
-                {bookingState === "Selection"
-                  ? "New Booking"
-                  : bookingState === "Custom"
-                    ? "Custom Set"
-                    : "Book This Look"}
+                {bookingHeaderTitle}
               </h2>
               <button
-                onClick={() => setBookingState(null)}
+                onClick={handleCloseAttempt}
                 className="p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5"
               >
                 <svg
@@ -311,224 +384,412 @@ export default function Gallery({
               </button>
             </div>
 
-            {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {/* 1. SELECTION SCREEN */}
-              {bookingState === "Selection" && (
-                <div className="flex flex-col gap-4 py-8">
-                  <p className="text-gray-400 text-sm text-center mb-4">
-                    How would you like to proceed?
-                  </p>
-                  <button
-                    onClick={() => setBookingState("Custom")}
-                    className={`${bookingState === null ? "hidden" : "" } flex flex-col items-center p-6 bg-[#1A1A1A] border border-white/10 rounded-2xl hover:border-[#FF007F]/50 transition-all group`}
+            {/* CANCELLATION CONFIRMATION OVERLAY */}
+            {showCancelConfirm ? (
+              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in-95 duration-200">
+                <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 mb-4">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   >
-                    <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-[#FF007F] mb-3 transition-colors">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M12 5v14M5 12h14" />
-                      </svg>
-                    </div>
-                    <h3 className="text-white font-bold text-lg">
-                      Custom Inspo Set
-                    </h3>
-                    <p className="text-xs text-gray-400 text-center mt-1">
-                      Upload your Pinterest board or reference.
-                    </p>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setBookingState(null); // 1. Close the modal
-                      if (onScrollToGallery) {
-                        // 2. Wait a tiny bit for the modal exit animation to start, then scroll
-                        setTimeout(() => {
-                          onScrollToGallery();
-                        }, 150);
-                      }
-                    }}
-                    className="flex flex-col items-center p-6 bg-[#1A1A1A] border border-white/10 rounded-2xl hover:border-[#FF007F]/50 transition-all group"
-                  >
-                    <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-[#FF007F] mb-3 transition-colors">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <rect
-                          width="18"
-                          height="18"
-                          x="3"
-                          y="3"
-                          rx="2"
-                          ry="2"
-                        />
-                        <circle cx="9" cy="9" r="2" />
-                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                      </svg>
-                    </div>
-                    <h3 className="text-white font-bold text-lg">
-                      Choose a Design
-                    </h3>
-                    <p className="text-xs text-gray-400 text-center mt-1">
-                      Browse the gallery below to find your look.
-                    </p>
-                  </button>
-                  2
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
                 </div>
-              )}
+                <h3 className="text-xl font-bold text-white mb-2">
+                  Discard Booking?
+                </h3>
+                <p className="text-sm text-gray-400 mb-6">
+                  Are you sure you want to cancel? Your selected date, time, and
+                  notes will be lost.
+                </p>
 
-              {/* 2. DETAILS PREVIEW & FORM */}
-              {bookingState !== "Selection" && (
-                <>
-                  {bookingState === "Custom" ? (
-                    <div className="flex flex-col items-center justify-center gap-3 bg-white/5 p-6 rounded-2xl border border-white/10 border-dashed">
-                      <div className="w-16 h-16 rounded-full bg-[#FF007F]/10 flex items-center justify-center text-[#FF007F]">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M12 5v14M5 12h14" />
-                        </svg>
-                      </div>
-                      <h3 className="text-white font-bold text-lg">
-                        Custom Nail Art
-                      </h3>
-                    </div>
-                  ) : (
-                    bookingState && (
-                      <div className="flex gap-4 bg-white/5 p-4 rounded-2xl border border-white/10">
-                        <img
-                          src={(bookingState as NailData).img}
-                          alt="Selected"
-                          className="w-24 h-32 object-cover rounded-lg"
-                        />
-                        <div className="flex flex-col justify-center">
-                          <span className="text-[#FF007F] text-xs font-bold uppercase tracking-widest mb-1">
-                            Selected Design
-                          </span>
-                          <h3 className="text-white font-bold text-lg leading-tight mb-2">
-                            {(bookingState as NailData).title}
-                          </h3>
+                <div className="flex gap-3 w-full">
+                  <button
+                    onClick={() => setShowCancelConfirm(false)}
+                    className="flex-1 py-3 rounded-xl border border-white/10 text-white font-bold hover:bg-white/5 transition-all"
+                  >
+                    Keep Editing
+                  </button>
+                  <button
+                    onClick={resetBooking}
+                    className="flex-1 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-all"
+                  >
+                    Yes, Discard
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Scrollable Content */}
+                <div
+                  key={
+                    bookingScreen === "Selection"
+                      ? "selection"
+                      : bookingScreen === "BespokeSelection"
+                      ? "bespoke"
+                      : "form"
+                  }
+                  className="flex-1 overflow-y-auto p-6 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300"
+                >
+                  {/* 1. MAIN SELECTION SCREEN */}
+                  {bookingScreen === "Selection" && (
+                    <div className="flex flex-col gap-4 py-8">
+                      <p className="text-gray-400 text-sm text-center mb-4">
+                        What service are you booking?
+                      </p>
+
+                      <button
+                        onClick={() => setBookingScreen("BespokeSelection")}
+                        className="flex flex-col items-center p-6 bg-[#1A1A1A] border border-white/10 rounded-2xl hover:border-[#FF007F]/50 transition-all group"
+                      >
+                        <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-[#FF007F] mb-3 transition-colors">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                          </svg>
                         </div>
-                      </div>
-                    )
+                        <h3 className="text-white font-bold text-lg">
+                          Bespoke Nails
+                        </h3>
+                        <p className="text-xs text-gray-400 text-center mt-1">
+                          Choose a look from our collection or upload a custom
+                          design.
+                        </p>
+                      </button>
+
+                      <button
+                        onClick={() => setBookingScreen("Removal")}
+                        className="flex flex-col items-center p-6 bg-[#1A1A1A] border border-white/10 rounded-2xl hover:border-[#FF007F]/50 transition-all group"
+                      >
+                        <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-[#FF007F] mb-3 transition-colors">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M3 6h18" />
+                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                          </svg>
+                        </div>
+                        <h3 className="text-white font-bold text-lg">
+                          Nail Removal
+                        </h3>
+                        <p className="text-xs text-gray-400 text-center mt-1">
+                          Safely remove your current set.
+                        </p>
+                      </button>
+                    </div>
                   )}
 
-                  <div className="space-y-4 pt-4 border-t border-white/10">
-                    <div>
-                      <label className="block text-gray-400 text-sm font-semibold mb-2">
-                        Select Date
-                      </label>
-                      <BookingCalendar
-                        onDateSelect={(date) => setSelectedDate(date)}
-                      />
-                    </div>
+                  {/* 2. BESPOKE SUB-MENU */}
+                  {bookingScreen === "BespokeSelection" && (
+                    <div className="flex flex-col gap-4 py-8">
+                      <p className="text-gray-400 text-sm text-center mb-4">
+                        How would you like to choose your bespoke set?
+                      </p>
 
-                    {selectedDate && (
-                      <div>
-                        <label className="block text-gray-400 text-sm font-semibold mb-2">
-                          Select Time
-                        </label>
-                        <div className="grid grid-cols-3 gap-2">
-                          {availableTimes.map((time) => {
-                            const isBooked = bookedTimes.includes(time);
-                            return (
-                              <button
-                                key={time}
-                                disabled={isBooked}
-                                onClick={() => setSelectedTime(time)}
-                                className={`py-3 rounded-xl text-sm font-bold transition-all border ${
-                                  isBooked
-                                    ? "bg-red-500/10 border-red-500/20 text-red-500/50 cursor-not-allowed line-through"
-                                    : selectedTime === time
-                                      ? "bg-[#FF007F] border-[#FF007F] text-white"
-                                      : "bg-white/5 border-white/10 text-gray-300 hover:border-[#FF007F]/50"
-                                }`}
+                      <button
+                        onClick={() => setBookingScreen("Custom")}
+                        className="flex flex-col items-center p-6 bg-[#1A1A1A] border border-white/10 rounded-2xl hover:border-[#FF007F]/50 transition-all group"
+                      >
+                        <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-[#FF007F] mb-3 transition-colors">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M12 5v14M5 12h14" />
+                          </svg>
+                        </div>
+                        <h3 className="text-white font-bold text-lg">
+                          Custom Nail Set
+                        </h3>
+                        <p className="text-xs text-gray-400 text-center mt-1">
+                          Upload your Pinterest board or reference.
+                        </p>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          resetBooking();
+                          if (onScrollToGallery)
+                            setTimeout(() => onScrollToGallery(), 150);
+                        }}
+                        className="flex flex-col items-center p-6 bg-[#1A1A1A] border border-white/10 rounded-2xl hover:border-[#FF007F]/50 transition-all group"
+                      >
+                        <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-[#FF007F] mb-3 transition-colors">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <rect
+                              width="18"
+                              height="18"
+                              x="3"
+                              y="3"
+                              rx="2"
+                              ry="2"
+                            />
+                            <circle cx="9" cy="9" r="2" />
+                            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                          </svg>
+                        </div>
+                        <h3 className="text-white font-bold text-lg">
+                          Chosen Collection Set
+                        </h3>
+                        <p className="text-xs text-gray-400 text-center mt-1">
+                          Browse the gallery below and pick a time.
+                        </p>
+                      </button>
+
+                      <button
+                        onClick={() => setBookingScreen("Selection")}
+                        className="mt-4 text-sm text-gray-500 hover:text-white transition-colors text-center w-full"
+                      >
+                        ← Back to Services
+                      </button>
+                    </div>
+                  )}
+
+                  {/* 3. DETAILS PREVIEW & FORM */}
+                  {isFormScreen && (
+                    <>
+                      {isCustomScreen ? (
+                        <div className="flex flex-col items-center justify-center gap-3 bg-white/5 p-6 rounded-2xl border border-white/10 border-dashed relative">
+                          <button
+                            onClick={removeSelection}
+                            className="absolute top-3 right-3 p-2 text-gray-400 hover:text-red-400 hover:bg-white/5 rounded-full transition-colors"
+                            title="Remove Selection"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M3 6h18" />
+                              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                            </svg>
+                          </button>
+                          <div className="w-16 h-16 rounded-full bg-[#FF007F]/10 flex items-center justify-center text-[#FF007F]">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="24"
+                              height="24"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M12 5v14M5 12h14" />
+                            </svg>
+                          </div>
+                          <h3 className="text-white font-bold text-lg">
+                            Custom Nail Art
+                          </h3>
+                        </div>
+                      ) : isRemovalScreen ? (
+                        <div className="flex flex-col items-center justify-center gap-3 bg-white/5 p-6 rounded-2xl border border-white/10 border-dashed relative">
+                          <button
+                            onClick={removeSelection}
+                            className="absolute top-3 right-3 p-2 text-gray-400 hover:text-red-400 hover:bg-white/5 rounded-full transition-colors"
+                            title="Remove Selection"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M3 6h18" />
+                              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                            </svg>
+                          </button>
+                          <div className="w-16 h-16 rounded-full bg-[#FF007F]/10 flex items-center justify-center text-[#FF007F]">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="24"
+                              height="24"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M3 6h18" />
+                              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                            </svg>
+                          </div>
+                          <h3 className="text-white font-bold text-lg">
+                            Nail Removal
+                          </h3>
+                          <p className="text-xs text-gray-400 text-center">
+                            Select a date and time to remove your set.
+                          </p>
+                        </div>
+                      ) : (
+                        selectedDesign && (
+                          <div className="flex gap-4 bg-white/5 p-4 rounded-2xl border border-white/10 relative">
+                            <button
+                              onClick={removeSelection}
+                              className="absolute top-2 right-2 p-2 text-gray-400 hover:text-red-400 hover:bg-white/5 rounded-full transition-colors"
+                              title="Remove Selection"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
                               >
-                                {time}
-                              </button>
-                            );
-                          })}
+                                <path d="M3 6h18" />
+                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                              </svg>
+                            </button>
+                            <img
+                              src={selectedDesign.img}
+                              alt="Selected"
+                              className="w-24 h-32 object-cover rounded-lg"
+                            />
+                            <div className="flex flex-col justify-center pr-8">
+                              <span className="text-[#FF007F] text-xs font-bold uppercase tracking-widest mb-1">
+                                Selected Design
+                              </span>
+                              <h3 className="text-white font-bold text-lg leading-tight mb-2">
+                                {selectedDesign.title}
+                              </h3>
+                            </div>
+                          </div>
+                        )
+                      )}
+
+                      <div className="space-y-4 pt-4 border-t border-white/10">
+                        <div>
+                          <label className="block text-gray-400 text-sm font-semibold mb-2">
+                            Select Date
+                          </label>
+                          <BookingCalendar
+                            onDateSelect={(date) => setSelectedDate(date)}
+                            onTimeSelect={(time) => setSelectedTime(time)}
+                            availableTimes={availableTimes}
+                          />
+                        </div>
+
+                        {isCustomScreen && (
+                          <div>
+                            <label className="block text-gray-400 text-sm font-semibold mb-2">
+                              Upload Inspiration Photo
+                            </label>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) =>
+                                setCustomImage(
+                                  e.target.files ? e.target.files[0] : null
+                                )
+                              }
+                              className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#FF007F]/20 file:text-[#FF007F] cursor-pointer"
+                            />
+                          </div>
+                        )}
+
+                        <div>
+                          <label className="block text-gray-400 text-sm font-semibold mb-2">
+                            Special Requests
+                          </label>
+                          <textarea
+                            rows={3}
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#FF007F] resize-none"
+                            placeholder="Any specific colors or tweaks?"
+                          ></textarea>
                         </div>
                       </div>
-                    )}
+                    </>
+                  )}
+                </div>
 
-                    {bookingState === "Custom" && (
-                      <div>
-                        <label className="block text-gray-400 text-sm font-semibold mb-2">
-                          Upload Inspiration Photo
-                        </label>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) =>
-                            setCustomImage(
-                              e.target.files ? e.target.files[0] : null,
-                            )
-                          }
-                          className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#FF007F]/20 file:text-[#FF007F] cursor-pointer"
-                        />
-                      </div>
-                    )}
-
-                    <div>
-                      <label className="block text-gray-400 text-sm font-semibold mb-2">
-                        Special Requests
-                      </label>
-                      <textarea
-                        rows={3}
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#FF007F] resize-none"
-                        placeholder="Any specific colors or tweaks?"
-                      ></textarea>
-                    </div>
+                {/* Footer */}
+                {isFormScreen && (
+                  <div className="p-6 border-t border-white/10 bg-[#1A1A1A] animate-in slide-in-from-bottom-2 duration-300">
+                    <button
+                      onClick={handleConfirmBooking}
+                      disabled={isSubmitting}
+                      className="w-full bg-[#FF007F] text-white font-bold uppercase tracking-wider py-4 rounded-xl hover:bg-[#ff1a8c] transition-all disabled:opacity-50"
+                    >
+                      {isSubmitting
+                        ? "Processing..."
+                        : isCustomScreen
+                        ? "Submit Request"
+                        : "Request Booking"}
+                    </button>
+                    <p className="text-center text-xs text-gray-500 mt-3">
+                      We will confirm your appointment and final pricing via
+                      DM/Email.
+                    </p>
                   </div>
-                </>
-              )}
-            </div>
-
-            {/* Footer */}
-            {bookingState !== "Selection" && (
-              <div className="p-6 border-t border-white/10 bg-[#1A1A1A]">
-                <button
-                  onClick={handleConfirmBooking}
-                  disabled={isSubmitting}
-                  className="w-full bg-[#FF007F] text-white font-bold uppercase tracking-wider py-4 rounded-xl hover:bg-[#ff1a8c] transition-all disabled:opacity-50"
-                >
-                  {isSubmitting
-                    ? "Processing..."
-                    : bookingState === "Custom"
-                      ? "Submit Request"
-                      : "Request Booking"}
-                </button>
-                <p className="text-center text-xs text-gray-500 mt-3">
-                  We will confirm your appointment and final pricing via
-                  DM/Email.
-                </p>
-              </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -542,11 +803,17 @@ export default function Gallery({
           className="fixed inset-0 z-[9998] flex items-center justify-center p-4 sm:p-6"
         >
           <div
-            className={`absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300 ${selectedNail ? "opacity-100" : "opacity-0"}`}
+            className={`absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300 ${
+              selectedNail ? "opacity-100" : "opacity-0"
+            }`}
             onClick={() => setSelectedNail(null)}
           />
           <div
-            className={`relative w-full max-w-4xl bg-[#0A0A0A] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row transition-all duration-300 ease-out ${selectedNail ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-4"}`}
+            className={`relative w-full max-w-4xl bg-[#0A0A0A] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row transition-all duration-300 ease-out ${
+              selectedNail
+                ? "opacity-100 scale-100 translate-y-0"
+                : "opacity-0 scale-95 translate-y-4"
+            }`}
           >
             <button
               onClick={() => setSelectedNail(null)}
@@ -630,8 +897,9 @@ export default function Gallery({
 
               <button
                 onClick={() => {
+                  const nail = selectedNail;
                   setSelectedNail(null);
-                  handleOpenBooking(selectedNail!);
+                  if (nail) handleOpenBooking(nail);
                 }}
                 className="mt-auto w-full bg-[#FF007F] text-white font-bold uppercase tracking-wider py-4 rounded-xl hover:bg-[#ff1a8c] transition-all duration-300 shadow-[0_0_20px_rgba(255,0,127,0.3)]"
               >
@@ -676,7 +944,9 @@ export default function Gallery({
           <div>
             <h3 className="text-white font-bold text-lg">Filter Designs</h3>
             <p
-              className={`${selectedFilters.length > 0 ? "hidden" : "block"} text-[#F9FAFB]/60 text-sm`}
+              className={`${
+                selectedFilters.length > 0 ? "hidden" : "block"
+              } text-[#F9FAFB]/60 text-sm`}
             >
               Use filter to easily find your perfect look
             </p>
@@ -831,10 +1101,10 @@ function SearchableDropdown({
   }, []);
 
   const filteredOptions = options.filter((option) =>
-    option.toLowerCase().includes(searchTerm.toLowerCase()),
+    option.toLowerCase().includes(searchTerm.toLowerCase())
   );
   const selectedInThisDropdown = selected.filter((item) =>
-    options.includes(item),
+    options.includes(item)
   );
 
   return (
@@ -861,7 +1131,9 @@ function SearchableDropdown({
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className={`shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          className={`shrink-0 transition-transform ${
+            isOpen ? "rotate-180" : ""
+          }`}
         >
           <path d="m6 9 6 6 6-6" />
         </svg>
