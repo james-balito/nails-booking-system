@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+import { lazy, Suspense } from "react";
 
 // Styles
 import "./App.css";
@@ -17,6 +18,9 @@ import AdminLayout from "./components/layout/admin/admin-layout";
 import ProtectedRoute from "./route/protected-route";
 import AdminRoute from "./route/admin-route";
 
+// Admin Pages
+const GalleryAdmin = lazy(() => import("./pages/admin/gallery-admin"));
+
 // Error Pages
 import NotFound from "./components/error/not-found";
 
@@ -31,8 +35,8 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/sign-up" element={<SignUp />} />
 
-{/* Test Connection */}
-<Route path = "/test" element={<TestConnection />}/>
+      {/* Test Connection */}
+      <Route path="/test" element={<TestConnection />} />
 
       {/* USER PORTAL */}
       <Route
@@ -47,21 +51,8 @@ function App() {
         {/* Other user routes go here */}
       </Route>
 
-      {/* ADMIN PORTAL */}
-      <Route
-        path="/admin/dashboard"
-        element={
-          <AdminRoute>
-            <AdminLayout />
-          </AdminRoute>
-        }
-      >
-        <Route index element={<AdminDashboard />} />
-
-        {/* 👇 404 inside the Admin Layout */}
-        <Route path="*" element={<NotFound />} />
-      </Route>
-
+    {/* ── ADMIN PORTAL ──────────────────────────────────── */}
+      {/* One parent. AdminLayout wraps every admin page via <Outlet />. */}
       <Route
         path="/admin"
         element={
@@ -70,9 +61,28 @@ function App() {
           </AdminRoute>
         }
       >
+        {/* /admin  and  /admin/dashboard → AdminDashboard */}
+        <Route index element={<AdminDashboard />} />
+        <Route path="dashboard" element={<AdminDashboard />} />
+
+        {/* /admin/gallery → lazy GalleryAdmin inside the layout */}
+        <Route
+          path="gallery"
+          element={
+            <Suspense
+              fallback={
+                <div className="p-8 text-center text-gray-500">Loading…</div>
+              }
+            >
+              <GalleryAdmin />
+            </Suspense>
+          }
+        />
+
+        {/* /admin/users → UsersIndex */}
         <Route path="users" element={<UsersIndex />} />
 
-        {/* 👇 404 inside the Admin Layout */}
+        {/* Any other /admin/* → 404 inside the admin chrome */}
         <Route path="*" element={<NotFound />} />
       </Route>
 
