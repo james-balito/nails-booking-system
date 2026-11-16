@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../../context/authContext";
 import LogoutModal from "../../ui/logout-modal";
+import logo from "../../assets/nobglogo.png";
 
 interface UserLayoutProps {
   children?: React.ReactNode;
@@ -60,7 +61,7 @@ export default function UserLayout({ children }: UserLayoutProps) {
             className={`flex items-center gap-2 ${isCollapsed ? "lg:hidden" : "block"}`}
           >
             <img
-              src="/src/assets/nobglogo.png"
+              src={logo}
               alt="Glossx Claw Logo"
               className="h-13 w-18 xl:w-18 xl:h-11 object-contain hover:cursor-pointer hover:opacity-80"
             />
@@ -72,7 +73,7 @@ export default function UserLayout({ children }: UserLayoutProps) {
             className={`hidden ${isCollapsed ? "lg:flex lg: ml-2" : "lg:hidden"} items-center justify-center font-bold text-[#FF007F] text-2xl playfair-display-header`}
           >
             <img
-              src="/src/assets/nobglogo.png"
+              src={logo}
               alt="Glossx Claw Logo"
               className="xl:w-12 xl:h-7 object-contain hover:cursor-pointer hover:opacity-80"
             />
