@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../../context/authContext";
 import LogoutModal from "../../ui/logout-modal";
-import logo from "../../assets/nobglogo.png";
+import logo from "../../../assets/nobglogo.png";
 
 interface UserLayoutProps {
   children?: React.ReactNode;
