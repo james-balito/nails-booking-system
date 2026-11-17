@@ -51,21 +51,18 @@ function App() {
         {/* Other user routes go here */}
       </Route>
 
-    {/* ── ADMIN PORTAL ──────────────────────────────────── */}
+      {/* ── ADMIN PORTAL ──────────────────────────────────── */}
       {/* One parent. AdminLayout wraps every admin page via <Outlet />. */}
       <Route
         path="/admin"
         element={
           <AdminRoute>
-            <AdminLayout />
+            <AdminLayout /> {/* ← layout only, no <Route> inside */}
           </AdminRoute>
         }
       >
-        {/* /admin  and  /admin/dashboard → AdminDashboard */}
         <Route index element={<AdminDashboard />} />
         <Route path="dashboard" element={<AdminDashboard />} />
-
-        {/* /admin/gallery → lazy GalleryAdmin inside the layout */}
         <Route
           path="gallery"
           element={
@@ -74,15 +71,11 @@ function App() {
                 <div className="p-8 text-center text-gray-500">Loading…</div>
               }
             >
-              <GalleryAdmin />
+              <GalleryAdmin /> {/* ← page component, no <Route> inside */}
             </Suspense>
           }
         />
-
-        {/* /admin/users → UsersIndex */}
         <Route path="users" element={<UsersIndex />} />
-
-        {/* Any other /admin/* → 404 inside the admin chrome */}
         <Route path="*" element={<NotFound />} />
       </Route>
 

@@ -1,14 +1,43 @@
 import supabase from "../config/supabaseClient";
-import type { Design, DesignInput } from "../types/design";
 
 const BUCKET = "designs";
 
+export interface Design {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  shape: string;
+  colors: string[];
+  designs: string[];
+  image_url: string;
+  price_cents: number | null;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export type DesignInput = {
+  slug: string;
+  title: string;
+  description: string;
+  shape: string;
+  colors: string[];
+  designs: string[];
+  image_url: string;
+  price_cents?: number | null;
+  is_active?: boolean;
+  sort_order?: number;
+};
+
+// ── Read ─────────────────────────────────────────────────────────────────────
 export async function listDesigns(opts: {
   includeInactive?: boolean;
   search?: string;
   page?: number;
   pageSize?: number;
-} = {}): Promise<{ data: Design[]; count: number }> {
+} = {}) {
   const { includeInactive = false, search = "", page = 0, pageSize = 20 } = opts;
 
   let q = supabase
@@ -28,6 +57,7 @@ export async function listDesigns(opts: {
   return { data: (data ?? []) as Design[], count: count ?? 0 };
 }
 
+// ── Read one ────────────────────────────────────────────────────────────────
 export async function getDesign(id: string): Promise<Design> {
   const { data, error } = await supabase
     .from("designs")
@@ -38,24 +68,29 @@ export async function getDesign(id: string): Promise<Design> {
   return data as Design;
 }
 
+// ── Upload image ─────────────────────────────────────────────────────────────
 export async function uploadDesignImage(file: File): Promise<string> {
   const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-  const safeExt = ["jpg", "jpeg", "png", "webp", "gif"].includes(ext) ? ext : "jpg";
-  const fileName = `${crypto.randomUUID()}.${safeExt}`;
+  const fileName = `${crypto.randomUUID()}.${ext}`;
 
-  const { error } = await supabase.storage.from(BUCKET).upload(fileName, file, {
+  console.log("[upload] bucket:", BUCKET, "file:", fileName);
+
+  const { data, error } = await supabase.storage.from(BUCKET).upload(fileName, file, {
     cacheControl: "31536000",
     upsert: false,
     contentType: file.type,
   });
+
+  console.log("[upload] result:", { data, error });
+
   if (error) throw error;
 
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(fileName);
-  return data.publicUrl;
+  const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(fileName);
+  return pub.publicUrl;
 }
 
+// ── Delete image by public URL ───────────────────────────────────────────────
 export async function deleteDesignImageByUrl(url: string): Promise<void> {
-  // extract the object key from the public URL
   const marker = `/object/public/${BUCKET}/`;
   const idx = url.indexOf(marker);
   if (idx === -1) return;
@@ -64,6 +99,7 @@ export async function deleteDesignImageByUrl(url: string): Promise<void> {
   await supabase.storage.from(BUCKET).remove([key]);
 }
 
+// ── Create ──────────────────────────────────────────────────────────────────
 export async function createDesign(input: DesignInput): Promise<Design> {
   const { data, error } = await supabase
     .from("designs")
@@ -85,10 +121,22 @@ export async function createDesign(input: DesignInput): Promise<Design> {
   return data as Design;
 }
 
+// ── Update ──────────────────────────────────────────────────────────────────
 export async function updateDesign(
   id: string,
   patch: Partial<DesignInput>
 ): Promise<Design> {
+  // If the image changed, clean up the old object after the row is updated.
+  let oldImageUrl: string | null = null;
+  if (patch.image_url !== undefined) {
+    const { data: existing } = await supabase
+      .from("designs")
+      .select("image_url")
+      .eq("id", id)
+      .single();
+    oldImageUrl = existing?.image_url ?? null;
+  }
+
   const { data, error } = await supabase
     .from("designs")
     .update(patch)
@@ -96,15 +144,26 @@ export async function updateDesign(
     .select("*")
     .single();
   if (error) throw error;
+
+  if (
+    oldImageUrl &&
+    patch.image_url &&
+    patch.image_url !== oldImageUrl
+  ) {
+    // best-effort cleanup; ignore failures
+    deleteDesignImageByUrl(oldImageUrl).catch(() => {});
+  }
+
   return data as Design;
 }
 
+// ── Toggle active ───────────────────────────────────────────────────────────
 export async function setDesignActive(id: string, is_active: boolean) {
   return updateDesign(id, { is_active });
 }
 
+// ── Hard delete (removes DB row + storage object) ───────────────────────────
 export async function hardDeleteDesign(id: string): Promise<void> {
-  // Fetch first so we can delete the image object
   const existing = await getDesign(id);
   const { error } = await supabase.from("designs").delete().eq("id", id);
   if (error) throw error;

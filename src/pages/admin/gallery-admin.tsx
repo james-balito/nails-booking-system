@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Design, DesignInput } from "../../types/design";
 import {
+  type Design,
   listDesigns,
-  createDesign,
-  updateDesign,
   setDesignActive,
   hardDeleteDesign,
 } from "../../api/designs";
-import DesignForm from "./design-form";
+import DesignForm from "../../pages/admin/design-form";
 
 type Mode = "list" | "create" | "edit";
 
@@ -18,46 +16,45 @@ export default function GalleryAdmin() {
   const [designs, setDesigns] = useState<Design[]>([]);
   const [count, setCount] = useState(0);
   const [page, setPage] = useState(0);
-  const [pageSize] = useState(20);
+  const pageSize = 20;
   const [search, setSearch] = useState("");
   const [includeInactive, setIncludeInactive] = useState(true);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
-
   const [confirmDelete, setConfirmDelete] = useState<Design | null>(null);
 
   const totalPages = Math.max(1, Math.ceil(count / pageSize));
+  
 
   const reload = useMemo(
-    () =>
-      async () => {
-        setLoading(true);
-        setError(null);
-        try {
-          const { data, count } = await listDesigns({
-            includeInactive,
-            search,
-            page,
-            pageSize,
-          });
-          setDesigns(data);
-          setCount(count);
-        } catch (e: any) {
-          setError(e.message ?? "Failed to load designs.");
-        } finally {
-          setLoading(false);
-        }
-      },
-    [includeInactive, search, page, pageSize]
+    () => async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const { data, count } = await listDesigns({
+          includeInactive,
+          search,
+          page,
+          pageSize,
+        });
+        setDesigns(data);
+        setCount(count);
+      } catch (e: any) {
+        setError(e.message ?? "Failed to load designs.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [includeInactive, search, page]
   );
 
   useEffect(() => {
     reload();
   }, [reload]);
 
-  // debounce search a touch
+  // debounce search
   const [searchDraft, setSearchDraft] = useState("");
   useEffect(() => {
     const t = setTimeout(() => {
@@ -106,10 +103,11 @@ export default function GalleryAdmin() {
     }
   }
 
+  // ── Create / Edit view ────────────────────────────────────────────────────
   if (mode !== "list") {
     return (
-      <div className="min-h-screen bg-transparent text-white p-4 sm:p-8">
-        <div>
+      <div className="p-4 sm:p-8">
+        <div className="max-w-3xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-2xl sm:text-3xl font-bold">
               {mode === "create" ? "New Design" : "Edit Design"}
@@ -121,27 +119,20 @@ export default function GalleryAdmin() {
               ← Back to list
             </button>
           </div>
-
           <DesignForm
             initial={editing}
-            onCancel={backToList}
             onSaved={backToList}
-            onSubmit={async (input: DesignInput) => {
-              if (mode === "edit" && editing) {
-                return updateDesign(editing.id, input);
-              }
-              return createDesign(input);
-            }}
+            onCancel={backToList}
           />
         </div>
       </div>
     );
   }
 
+  // ── List view ────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-transparent text-white">
-      <div>
-        {/* Header */}
+    <div className="p-4 sm:p-8">
+      <div className="max-w-6xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold">Gallery</h1>
@@ -176,7 +167,6 @@ export default function GalleryAdmin() {
           </label>
         </div>
 
-        {/* Error */}
         {error && (
           <div className="mb-4 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
             {error}
@@ -185,7 +175,7 @@ export default function GalleryAdmin() {
 
         {/* Table */}
         <div className="rounded-2xl border border-white/10 overflow-hidden">
-          <div className="grid grid-cols-[80px_1fr_120px_110px_180px] bg-[#1A1A1A] text-xs uppercase tracking-wider text-gray-500 px-4 py-3">
+          <div className="hidden md:grid grid-cols-[80px_1fr_120px_110px_180px] bg-[#1A1A1A] text-xs uppercase tracking-wider text-gray-500 px-4 py-3">
             <div>Image</div>
             <div>Title</div>
             <div>Shape</div>
@@ -203,7 +193,7 @@ export default function GalleryAdmin() {
             designs.map((d) => (
               <div
                 key={d.id}
-                className="grid grid-cols-[80px_1fr_120px_110px_180px] items-center px-4 py-3 border-t border-white/5 hover:bg-white/5"
+                className="grid grid-cols-1 md:grid-cols-[80px_1fr_120px_110px_180px] items-center gap-3 md:gap-0 px-4 py-3 border-t border-white/5 hover:bg-white/5"
               >
                 <div className="w-14 h-18 rounded-lg overflow-hidden bg-black">
                   <img
@@ -231,7 +221,7 @@ export default function GalleryAdmin() {
                     {d.is_active ? "Active" : "Hidden"}
                   </span>
                 </div>
-                <div className="flex justify-end gap-2">
+                <div className="flex md:justify-end gap-2">
                   <button
                     onClick={() => startEdit(d)}
                     className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white/5 hover:bg-white/10 transition-colors"
@@ -294,8 +284,9 @@ export default function GalleryAdmin() {
           <div className="relative w-full max-w-sm bg-[#1A1A1A] border border-white/10 rounded-2xl p-6">
             <h3 className="text-lg font-bold mb-2">Delete this design?</h3>
             <p className="text-sm text-gray-400 mb-6">
-              This is permanent. Existing bookings that reference this design
-              will keep their design_id set to NULL.
+              This is permanent. Bookings that reference this design will keep
+              their record but their <code>design_id</code> will be set to
+              NULL.
             </p>
             <div className="flex gap-3">
               <button
@@ -316,4 +307,5 @@ export default function GalleryAdmin() {
         </div>
       )}
     </div>
-  )};
+  );
+}

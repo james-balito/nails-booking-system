@@ -1,11 +1,25 @@
-import { useState, useEffect, useRef } from "react";
-import type { Design, DesignInput } from "../../types/design";
+import { useEffect, useRef, useState } from "react";
 import {
-  SHAPE_OPTIONS,
-  COLOR_OPTIONS,
-  DESIGN_OPTIONS,
-} from "../../types/design";
-import { uploadDesignImage } from "../../api/designs";
+  type Design,
+  type DesignInput,
+  createDesign,
+  updateDesign,
+  uploadDesignImage,
+} from "../../api/designs";
+
+const SHAPE_OPTIONS = [
+  "Almond", "Square", "Coffin", "Stiletto", "Oval", "Round", "Squoval",
+] as const;
+
+const COLOR_OPTIONS = [
+  "Pink", "White", "Black", "Red", "Nude", "Gold", "Chrome", "Blue",
+  "Green", "Purple", "Orange", "Yellow", "Brown",
+] as const;
+
+const DESIGN_OPTIONS = [
+  "French", "Ombre", "Chrome", "3D Art", "Floral", "Abstract", "Minimal",
+  "Glitter", "Marble", "Animal Print",
+] as const;
 
 function slugify(s: string) {
   return s
@@ -19,48 +33,45 @@ interface DesignFormProps {
   initial?: Design | null;
   onSaved: (design: Design) => void;
   onCancel: () => void;
-  onSubmit: (input: DesignInput) => Promise<Design>;
 }
 
-export default function DesignForm({
-  initial,
-  onSaved,
-  onCancel,
-  onSubmit,
-}: DesignFormProps) {
+export default function DesignForm({ initial, onSaved, onCancel }: DesignFormProps) {
+  // ── fields ────────────────────────────────────────────────────────────────
   const [title, setTitle] = useState(initial?.title ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [slugTouched, setSlugTouched] = useState(!!initial);
   const [description, setDescription] = useState(initial?.description ?? "");
-  const [shape, setShape] = useState(initial?.shape ?? SHAPE_OPTIONS[0]);
+  const [shape, setShape] = useState<string>(initial?.shape ?? SHAPE_OPTIONS[0]);
   const [colors, setColors] = useState<string[]>(initial?.colors ?? []);
-  const [designs, setDesigns] = useState<string[]>(initial?.designs ?? []);
+  const [designStyles, setDesignStyles] = useState<string[]>(initial?.designs ?? []);
   const [price, setPrice] = useState(
     initial?.price_cents != null ? (initial.price_cents / 100).toFixed(2) : ""
   );
   const [isActive, setIsActive] = useState(initial?.is_active ?? true);
   const [sortOrder, setSortOrder] = useState(initial?.sort_order ?? 0);
 
+  // ── image state ───────────────────────────────────────────────────────────
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState(initial?.image_url ?? "");
 
+  // ── ui state ──────────────────────────────────────────────────────────────
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // auto-derive slug from title until user edits it
+  // Auto-derive slug from title until user edits it
   useEffect(() => {
     if (!slugTouched && title) setSlug(slugify(title));
   }, [title, slugTouched]);
 
-  // revoke object URL when preview changes
+  // Revoke blob preview on unmount / change
   useEffect(() => {
     return () => {
       if (imagePreview.startsWith("blob:")) URL.revokeObjectURL(imagePreview);
     };
   }, [imagePreview]);
 
+  // ── helpers ───────────────────────────────────────────────────────────────
   function handleFile(file: File | null) {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
@@ -77,50 +88,66 @@ export default function DesignForm({
   }
 
   function toggle(list: string[], value: string, setter: (v: string[]) => void) {
-    setter(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
+    setter(
+      list.includes(value) ? list.filter((v) => v !== value) : [...list, value]
+    );
   }
 
+  // ── submit ────────────────────────────────────────────────────────────────
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
+    // client-side validation
     if (!title.trim()) return setError("Title is required.");
     if (!slug.trim()) return setError("Slug is required.");
     if (!imageFile && !imagePreview) return setError("Image is required.");
     if (colors.length === 0) return setError("Pick at least one color.");
-    if (designs.length === 0) return setError("Pick at least one design style.");
+    if (designStyles.length === 0) return setError("Pick at least one design style.");
 
     setSaving(true);
     try {
+      // 1. Upload new image if the admin picked one
       let image_url = initial?.image_url ?? "";
       if (imageFile) {
         image_url = await uploadDesignImage(imageFile);
       }
 
+      // 2. Build payload
       const input: DesignInput = {
         title: title.trim(),
         slug: slug.trim(),
         description: description.trim(),
         shape,
         colors,
-        designs,
+        designs: designStyles,
         image_url,
-        price_cents: price
-          ? Math.round(parseFloat(price) * 100)
-          : null,
+        price_cents: price ? Math.round(parseFloat(price) * 100) : null,
         is_active: isActive,
         sort_order: Number(sortOrder) || 0,
       };
 
-      const saved = await onSubmit(input);
+      // 3. Create or update
+      const saved = initial
+        ? await updateDesign(initial.id, input)
+        : await createDesign(input);
+
       onSaved(saved);
     } catch (err: any) {
-      setError(err.message ?? "Failed to save.");
+      // Common causes surfaced by RLS:
+      //  - "new row violates row-level security policy" → user is not admin
+      //  - "duplicate key value violates unique constraint designs_slug_key" → slug taken
+      const msg =
+        err?.message?.includes("designs_slug_key")
+          ? "That slug is already in use. Pick a different one."
+          : err?.message ?? "Failed to save.";
+      setError(msg);
     } finally {
       setSaving(false);
     }
   }
 
+  // ── render ────────────────────────────────────────────────────────────────
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
@@ -129,7 +156,7 @@ export default function DesignForm({
         </div>
       )}
 
-      {/* Image */}
+      {/* Image picker */}
       <div>
         <label className="block text-gray-400 text-sm font-semibold mb-2">
           Image
@@ -148,7 +175,7 @@ export default function DesignForm({
             <div className="text-center text-gray-500 text-sm px-4">
               Click to upload
               <br />
-              <span className="text-xs">JPG/PNG/WebP up to 8MB</span>
+              <span className="text-xs">JPG / PNG / WebP · up to 8 MB</span>
             </div>
           )}
           {imagePreview && (
@@ -177,6 +204,7 @@ export default function DesignForm({
             onChange={(e) => setTitle(e.target.value)}
             className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#FF007F]"
             placeholder="Chrome French Tips"
+            required
           />
         </div>
         <div>
@@ -191,6 +219,7 @@ export default function DesignForm({
             }}
             className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#FF007F] font-mono text-sm"
             placeholder="chrome-french-tips"
+            required
           />
         </div>
       </div>
@@ -260,12 +289,12 @@ export default function DesignForm({
         </label>
         <div className="flex flex-wrap gap-2">
           {DESIGN_OPTIONS.map((d) => {
-            const on = designs.includes(d);
+            const on = designStyles.includes(d);
             return (
               <button
                 key={d}
                 type="button"
-                onClick={() => toggle(designs, d, setDesigns)}
+                onClick={() => toggle(designStyles, d, setDesignStyles)}
                 className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border transition-all ${
                   on
                     ? "bg-[#FF007F]/20 border-[#FF007F] text-[#FF007F]"
@@ -279,7 +308,7 @@ export default function DesignForm({
         </div>
       </div>
 
-      {/* Price / order / active */}
+      {/* Price / sort / visibility */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
           <label className="block text-gray-400 text-sm font-semibold mb-2">
@@ -292,7 +321,7 @@ export default function DesignForm({
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#FF007F]"
-            placeholder="e.g. 75.00"
+            placeholder="75.00"
           />
         </div>
         <div>
@@ -308,7 +337,7 @@ export default function DesignForm({
         </div>
         <div>
           <label className="block text-gray-400 text-sm font-semibold mb-2">
-            Visible in gallery
+            Visible
           </label>
           <button
             type="button"
