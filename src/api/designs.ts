@@ -68,6 +68,36 @@ export async function getDesign(id: string): Promise<Design> {
   return data as Design;
 }
 
+
+export async function fetchDesignCategories() {
+  const { data, error } = await supabase
+    .from("designs")
+    .select("shape, colors, designs");
+
+  if (error) throw error;
+
+  const shapes = new Set<string>();
+  const colors = new Set<string>();
+  const designs = new Set<string>();
+
+  data.forEach((row) => {
+    if (row.shape) {
+      // Split "Long Almond" -> ["Long", "Almond"] to get just the categories
+      row.shape.split(" ").forEach((s: string) => {
+        if (s && s !== "Nail") shapes.add(s);
+      });
+    }
+    if (row.colors) row.colors.forEach((c: string) => colors.add(c));
+    if (row.designs) row.designs.forEach((d: string) => designs.add(d));
+  });
+
+  return {
+    shapes: Array.from(shapes),
+    colors: Array.from(colors),
+    designs: Array.from(designs),
+  };
+}
+
 // ── Upload image ─────────────────────────────────────────────────────────────
 export async function uploadDesignImage(file: File): Promise<string> {
   const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
