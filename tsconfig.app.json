@@ -23,5 +23,6 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src"],
+  "exclude": ["node_modules", "dist", "src/seeder"],
   "types": ["vite/client", "node"]
 }
