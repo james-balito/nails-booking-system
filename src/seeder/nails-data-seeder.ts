@@ -1,26 +1,4 @@
 /// <reference types="node" />
-/**
- * One-shot seeder: uploads the nail images to Supabase Storage AND inserts the
- * rows into public.designs (id, slug, title, description, shape, colors, designs,
- * image_url, price_cents, is_active, sort_order, ...).
- *
- * Run from the project root:
- *   npx tsx src/seeder/nails-data-seeder.ts
- *
- * .env (project root):
- *   VITE_SUPABASE_URL=...                  (already there)
- *   SUPABASE_SERVICE_ROLE_KEY=...          (no VITE_ prefix!)
- *   IMAGES_DIR=src/assets                  (optional, folder searched recursively)
- *   DEFAULT_PRICE_CENTS=0                  (optional, price for NEW rows only)
- *
- * Images are matched by name: nails1.jpg / nails1.png / nails1.webp ... -> slug "nails1".
- * Any extension works and the folder can be nested; no renaming needed.
- * Safe to re-run: images are overwritten, rows are upserted on slug, and
- * prices of existing rows are never touched.
- *
- * One-time SQL (SQL Editor) if slug isn't unique yet:
- *   create unique index if not exists designs_slug_key on public.designs (slug);
- */
 import "dotenv/config";
 import fs from "node:fs";
 import path from "node:path";
