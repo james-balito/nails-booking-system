@@ -5,7 +5,7 @@ import path from "node:path";
 import dotenv from "dotenv";
 dotenv.config({ override: true });
 import { createClient } from "@supabase/supabase-js";
-import { nailsData } from "../assets/nailsData"; // <-- adjust path if needed
+import { nailsData } from "../assets/nailsData.js"; // <-- adjust path if needed
 
 const TABLE = "designs";
 const BUCKET = "designs";
