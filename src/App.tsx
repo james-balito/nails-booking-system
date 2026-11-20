@@ -19,7 +19,9 @@ import ProtectedRoute from "./route/protected-route";
 import AdminRoute from "./route/admin-route";
 
 // Admin Pages
-const GalleryAdmin = lazy(() => import("./pages/admin/gallery-admin"));
+const GalleryAdmin = lazy(() => import("./pages/admin/gallery"));
+import GalleryEdit from "./pages/admin/gallery/edit";
+import GalleryCreate from "./pages/admin/gallery/create";
 
 // Error Pages
 import NotFound from "./components/error/not-found";
@@ -48,16 +50,14 @@ function App() {
         }
       >
         <Route index element={<UserDashboard />} />
-        {/* Other user routes go here */}
       </Route>
 
       {/* ── ADMIN PORTAL ──────────────────────────────────── */}
-      {/* One parent. AdminLayout wraps every admin page via <Outlet />. */}
       <Route
         path="/admin"
         element={
           <AdminRoute>
-            <AdminLayout /> {/* ← layout only, no <Route> inside */}
+            <AdminLayout />
           </AdminRoute>
         }
       >
@@ -71,7 +71,31 @@ function App() {
                 <div className="p-8 text-center text-gray-500">Loading…</div>
               }
             >
-              <GalleryAdmin /> {/* ← page component, no <Route> inside */}
+              <GalleryAdmin />
+            </Suspense>
+          }
+        />
+        <Route
+          path="gallery/create"
+          element={
+            <Suspense
+              fallback={
+                <div className="p-8 text-center text-gray-500">Loading…</div>
+              }
+            >
+              <GalleryCreate />
+            </Suspense>
+          }
+        />
+        <Route
+          path="gallery/:slug/edit"
+          element={
+            <Suspense
+              fallback={
+                <div className="p-8 text-center text-gray-500">Loading…</div>
+              }
+            >
+              <GalleryEdit />
             </Suspense>
           }
         />

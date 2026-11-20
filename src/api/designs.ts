@@ -60,14 +60,18 @@ export async function listDesigns(opts: {
 // ── Read one ────────────────────────────────────────────────────────────────
 export async function getDesign(id: string): Promise<Design> {
   const { data, error } = await supabase
-    .from("designs")
-    .select("*")
-    .eq("id", id)
-    .single();
+    .from("designs").select("*").eq("id", id).single();
   if (error) throw error;
   return data as Design;
 }
 
+export async function getDesignBySlug(slug: string): Promise<Design> {
+  const { data, error } = await supabase
+    .from("designs").select("*").eq("slug", slug).maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error(`No design found with slug "${slug}".`);
+  return data as Design;
+}
 
 export async function fetchDesignCategories() {
   const { data, error } = await supabase
