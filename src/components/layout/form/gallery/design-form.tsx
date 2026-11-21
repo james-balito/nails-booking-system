@@ -9,47 +9,14 @@ import {
 } from "../../../../api/designs";
 
 // ── Default fallbacks ────────────────────────────────────────────────────────
-const DEFAULT_SHAPES = [
-  "Almond",
-  "Square",
-  "Coffin",
-  "Stiletto",
-  "Oval",
-  "Round",
-  "Squoval",
-];
-const DEFAULT_COLORS = [
-  "Pink",
-  "White",
-  "Black",
-  "Red",
-  "Nude",
-  "Gold",
-  "Chrome",
-  "Blue",
-  "Green",
-  "Purple",
-];
-const DEFAULT_DESIGNS = [
-  "French",
-  "Ombre",
-  "Chrome",
-  "3D Art",
-  "Floral",
-  "Abstract",
-  "Minimal",
-  "Glitter",
-  "Marble",
-];
+const DEFAULT_SHAPES = ["Almond", "Square", "Coffin", "Stiletto", "Oval", "Round", "Squoval"];
+const DEFAULT_COLORS = ["Pink", "White", "Black", "Red", "Nude", "Gold", "Chrome", "Blue", "Green", "Purple"];
+const DEFAULT_DESIGNS = ["French", "Ombre", "Chrome", "3D Art", "Floral", "Abstract", "Minimal", "Glitter", "Marble"];
 
 const LENGTH_OPTIONS = ["Short", "Medium", "Long", "Extra Long"] as const;
 
 function slugify(s: string) {
-  return s
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
 interface DesignFormProps {
@@ -58,11 +25,7 @@ interface DesignFormProps {
   onCancel: () => void;
 }
 
-export default function DesignForm({
-  initial,
-  onSaved,
-  onCancel,
-}: DesignFormProps) {
+export default function DesignForm({ initial, onSaved, onCancel }: DesignFormProps) {
   // ── Dynamic Categories ────────────────────────────────────────────────────
   const [activeShapes, setActiveShapes] = useState<string[]>(DEFAULT_SHAPES);
   const [activeColors, setActiveColors] = useState<string[]>(DEFAULT_COLORS);
@@ -74,22 +37,16 @@ export default function DesignForm({
   const [slugTouched, setSlugTouched] = useState(!!initial);
   const [description, setDescription] = useState(initial?.description ?? "");
 
-  const initialLength =
-    LENGTH_OPTIONS.find((l) => initial?.shape.startsWith(l)) ?? "Medium";
-  const initialShape =
-    initial?.shape.replace(`${initialLength} `, "") ?? DEFAULT_SHAPES[0];
+  const initialLength = LENGTH_OPTIONS.find((l) => initial?.shape.startsWith(l)) ?? "Medium";
+  const initialShape = initial?.shape.replace(`${initialLength} `, "") ?? DEFAULT_SHAPES[0];
 
   const [length, setLength] = useState<string>(initialLength);
   const [shape, setShape] = useState<string>(initialShape);
 
   const [colors, setColors] = useState<string[]>(initial?.colors ?? []);
-  const [designStyles, setDesignStyles] = useState<string[]>(
-    initial?.designs ?? [],
-  );
+  const [designStyles, setDesignStyles] = useState<string[]>(initial?.designs ?? []);
 
-  const [price, setPrice] = useState(
-    initial?.price_cents != null ? (initial.price_cents / 100).toFixed(2) : "",
-  );
+  const [price, setPrice] = useState(initial?.price_cents != null ? (initial.price_cents / 100).toFixed(2) : "");
   const [isActive, setIsActive] = useState(initial?.is_active ?? true);
   const [sortOrder, setSortOrder] = useState(initial?.sort_order ?? 0);
 
@@ -102,10 +59,8 @@ export default function DesignForm({
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Search/Expand state for the categories
   const [colorSearch, setColorSearch] = useState("");
   const [showAllColors, setShowAllColors] = useState(false);
-
   const [designSearch, setDesignSearch] = useState("");
   const [showAllDesigns, setShowAllDesigns] = useState(false);
 
@@ -118,30 +73,16 @@ export default function DesignForm({
       try {
         const dbCategories = await fetchDesignCategories();
         if (cancelled) return;
-        setActiveShapes(
-          Array.from(
-            new Set([...DEFAULT_SHAPES, ...dbCategories.shapes]),
-          ).sort(),
-        );
-        setActiveColors(
-          Array.from(
-            new Set([...DEFAULT_COLORS, ...dbCategories.colors]),
-          ).sort(),
-        );
-        setActiveDesigns(
-          Array.from(
-            new Set([...DEFAULT_DESIGNS, ...dbCategories.designs]),
-          ).sort(),
-        );
+        setActiveShapes(Array.from(new Set([...DEFAULT_SHAPES, ...dbCategories.shapes])).sort());
+        setActiveColors(Array.from(new Set([...DEFAULT_COLORS, ...dbCategories.colors])).sort());
+        setActiveDesigns(Array.from(new Set([...DEFAULT_DESIGNS, ...dbCategories.designs])).sort());
       } catch (err) {
         console.error("Failed to load categories from DB, using defaults.");
       } finally {
         if (!cancelled) setLoadingCategories(false);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -156,23 +97,15 @@ export default function DesignForm({
 
   function handleFile(file: File | null) {
     if (!file) return;
-    if (!file.type.startsWith("image/"))
-      return setError("Please choose an image file.");
-    if (file.size > 8 * 1024 * 1024)
-      return setError("Image must be under 8MB.");
+    if (!file.type.startsWith("image/")) return setError("Please choose an image file.");
+    if (file.size > 8 * 1024 * 1024) return setError("Image must be under 8MB.");
     setError(null);
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
   }
 
-  function toggle(
-    list: string[],
-    value: string,
-    setter: (v: string[]) => void,
-  ) {
-    setter(
-      list.includes(value) ? list.filter((v) => v !== value) : [...list, value],
-    );
+  function toggle(list: string[], value: string, setter: (v: string[]) => void) {
+    setter(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -183,8 +116,7 @@ export default function DesignForm({
     if (!slug.trim()) return setError("Slug is required.");
     if (!imageFile && !imagePreview) return setError("Image is required.");
     if (colors.length === 0) return setError("Pick at least one color.");
-    if (designStyles.length === 0)
-      return setError("Pick at least one design style.");
+    if (designStyles.length === 0) return setError("Pick at least one design style.");
 
     setSaving(true);
     try {
@@ -206,59 +138,43 @@ export default function DesignForm({
         sort_order: Number(sortOrder) || 0,
       };
 
-      const saved = initial
-        ? await updateDesign(initial.id, input)
-        : await createDesign(input);
+      const saved = initial ? await updateDesign(initial.id, input) : await createDesign(input);
       onSaved(saved);
     } catch (err: any) {
       const msg = err?.message?.includes("designs_slug_key")
         ? "That slug is already in use. Pick a different one."
-        : (err?.message ?? "Failed to save.");
+        : err?.message ?? "Failed to save.";
       setError(msg);
     } finally {
       setSaving(false);
     }
   }
 
-  // Filter logic for the multi-select groups
   const filteredColors = useMemo(() => {
-    let list = activeColors.filter((c) =>
-      c.toLowerCase().includes(colorSearch.toLowerCase()),
-    );
-
-    // 1. Sort selected colors to the front
+    let list = activeColors.filter((c) => c.toLowerCase().includes(colorSearch.toLowerCase()));
     list.sort((a, b) => {
       const aSelected = colors.includes(a) ? 1 : 0;
       const bSelected = colors.includes(b) ? 1 : 0;
       return bSelected - aSelected;
     });
-
-    // 2. If not searching and not showing all, only slice the first 6
     if (!showAllColors && !colorSearch) list = list.slice(0, 6);
-
     return list;
   }, [activeColors, colorSearch, showAllColors, colors]);
 
   const filteredDesigns = useMemo(() => {
-    let list = activeDesigns.filter((d) =>
-      d.toLowerCase().includes(designSearch.toLowerCase()),
-    );
-
-    // 1. Sort selected designs to the front
+    let list = activeDesigns.filter((d) => d.toLowerCase().includes(designSearch.toLowerCase()));
     list.sort((a, b) => {
       const aSelected = designStyles.includes(a) ? 1 : 0;
       const bSelected = designStyles.includes(b) ? 1 : 0;
       return bSelected - aSelected;
     });
-
-    // 2. If not searching and not showing all, only slice the first 6
     if (!showAllDesigns && !designSearch) list = list.slice(0, 6);
-
     return list;
   }, [activeDesigns, designSearch, showAllDesigns, designStyles]);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 max-w-2xl mx-auto">
+    // Added max-w-3xl to keep the form readable on ultra-wide screens
+    <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8 max-w-3xl mx-auto">
       {error && (
         <div className="px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
           {error}
@@ -266,27 +182,26 @@ export default function DesignForm({
       )}
 
       {/* --- 1. IMAGE & BASIC INFO --- */}
-      <div className="bg-[#1A1A1A]/50 border border-white/5 rounded-2xl p-5 sm:p-6 space-y-6">
+      <div className="bg-[#1A1A1A]/50 border border-white/5 rounded-2xl p-4 sm:p-6 lg:p-8 space-y-6">
         <h3 className="text-white font-bold text-lg border-b border-white/10 pb-2">
           Basic Info
         </h3>
 
+        {/* Changed to flex-col on mobile, flex-row on sm+ */}
         <div className="flex flex-col sm:flex-row gap-6">
-          {/* Image */}
-          <div className="shrink-0">
-            <label className="block text-gray-400 text-sm font-semibold mb-2">
+          
+          {/* Image Container */}
+          <div className="shrink-0 flex flex-col items-center sm:items-start">
+            <label className="block text-gray-400 text-sm font-semibold mb-2 w-full text-center sm:text-left">
               Image
             </label>
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="relative w-32 h-40 rounded-xl border-2 border-dashed border-white/15 hover:border-[#FF007F]/50 cursor-pointer overflow-hidden bg-black/40 flex items-center justify-center transition-colors"
+              // Responsive width/height: slightly smaller on mobile, larger on desktop
+              className="relative w-28 h-36 sm:w-32 sm:h-40 lg:w-40 lg:h-48 rounded-xl border-2 border-dashed border-white/15 hover:border-[#FF007F]/50 cursor-pointer overflow-hidden bg-black/40 flex items-center justify-center transition-colors"
             >
               {imagePreview ? (
-                <img
-                  src={imagePreview}
-                  alt="preview"
-                  className="w-full h-full object-cover"
-                />
+                <img src={imagePreview} alt="preview" className="w-full h-full object-cover" />
               ) : (
                 <div className="text-center text-gray-500 text-[10px] px-2 leading-tight">
                   Click to upload
@@ -298,21 +213,13 @@ export default function DesignForm({
                 </div>
               )}
             </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
-            />
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files?.[0] ?? null)} />
           </div>
 
-          {/* Title & Slug & Desc */}
-          <div className="flex-1 space-y-4">
+          {/* Title & Slug Container */}
+          <div className="flex-1 space-y-4 w-full">
             <div>
-              <label className="block text-gray-400 text-sm font-semibold mb-1">
-                Title
-              </label>
+              <label className="block text-gray-400 text-sm font-semibold mb-1">Title</label>
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -322,15 +229,10 @@ export default function DesignForm({
               />
             </div>
             <div>
-              <label className="block text-gray-400 text-sm font-semibold mb-1">
-                Slug
-              </label>
+              <label className="block text-gray-400 text-sm font-semibold mb-1">Slug</label>
               <input
                 value={slug}
-                onChange={(e) => {
-                  setSlugTouched(true);
-                  setSlug(slugify(e.target.value));
-                }}
+                onChange={(e) => { setSlugTouched(true); setSlug(slugify(e.target.value)); }}
                 className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-400 font-mono focus:outline-none focus:border-[#FF007F]"
                 placeholder="chrome-french-tips"
                 required
@@ -340,11 +242,9 @@ export default function DesignForm({
         </div>
 
         <div>
-          <label className="block text-gray-400 text-sm font-semibold mb-1">
-            Description
-          </label>
+          <label className="block text-gray-400 text-sm font-semibold mb-1">Description</label>
           <textarea
-            rows={2}
+            rows={3}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FF007F] resize-none"
@@ -354,66 +254,51 @@ export default function DesignForm({
       </div>
 
       {/* --- 2. CATEGORIES --- */}
-      <div className="bg-[#1A1A1A]/50 border border-white/5 rounded-2xl p-5 sm:p-6 space-y-8">
+      <div className="bg-[#1A1A1A]/50 border border-white/5 rounded-2xl p-4 sm:p-6 lg:p-8 space-y-8">
         <h3 className="text-white font-bold text-lg border-b border-white/10 pb-2">
           Categories
         </h3>
 
         {loadingCategories ? (
-          <div> loading... </div>
+          <div className="text-gray-500 text-sm py-4">Loading categories...</div>
         ) : (
           <>
-            {/* Shape & Length (Grid) */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* Shape & Length (Stack on mobile, grid on sm+) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-gray-400 text-sm font-semibold mb-2">
-                  Nail Shape
-                </label>
+                <label className="block text-gray-400 text-sm font-semibold mb-2">Nail Shape</label>
                 <select
                   value={shape}
                   onChange={(e) => setShape(e.target.value)}
                   className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF007F]"
                 >
-                  {activeShapes.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
+                  {activeShapes.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-gray-400 text-sm font-semibold mb-2">
-                  Nail Length
-                </label>
+                <label className="block text-gray-400 text-sm font-semibold mb-2">Nail Length</label>
                 <select
                   value={length}
                   onChange={(e) => setLength(e.target.value)}
                   className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF007F]"
                 >
-                  {LENGTH_OPTIONS.map((l) => (
-                    <option key={l} value={l}>
-                      {l}
-                    </option>
-                  ))}
+                  {LENGTH_OPTIONS.map((l) => <option key={l} value={l}>{l}</option>)}
                 </select>
               </div>
             </div>
 
             {/* Colors Multi-Select */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-gray-400 text-sm font-semibold">
-                  Colors
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Search colors..."
-                    value={colorSearch}
-                    onChange={(e) => setColorSearch(e.target.value)}
-                    className="bg-transparent border-b border-white/20 text-xs text-white placeholder-gray-600 px-1 py-0.5 focus:outline-none focus:border-[#FF007F] w-32"
-                  />
-                </div>
+              {/* Responsive header for search: stacked on mobile, flex-row on sm+ */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
+                <label className="block text-gray-400 text-sm font-semibold">Colors</label>
+                <input
+                  type="text"
+                  placeholder="Search colors..."
+                  value={colorSearch}
+                  onChange={(e) => setColorSearch(e.target.value)}
+                  className="bg-black/50 sm:bg-transparent border sm:border-0 border-white/10 sm:border-b border-white/20 text-xs text-white placeholder-gray-600 px-3 sm:px-1 py-2 sm:py-0.5 rounded-md sm:rounded-none focus:outline-none focus:border-[#FF007F] w-full sm:w-40"
+                />
               </div>
               <div className="flex flex-wrap gap-2">
                 {filteredColors.map((c) => {
@@ -443,19 +328,15 @@ export default function DesignForm({
 
             {/* Designs Multi-Select */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-gray-400 text-sm font-semibold">
-                  Design Styles
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Search styles..."
-                    value={designSearch}
-                    onChange={(e) => setDesignSearch(e.target.value)}
-                    className="bg-transparent border-b border-white/20 text-xs text-white placeholder-gray-600 px-1 py-0.5 focus:outline-none focus:border-[#FF007F] w-32"
-                  />
-                </div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
+                <label className="block text-gray-400 text-sm font-semibold">Design Styles</label>
+                <input
+                  type="text"
+                  placeholder="Search styles..."
+                  value={designSearch}
+                  onChange={(e) => setDesignSearch(e.target.value)}
+                  className="bg-black/50 sm:bg-transparent border sm:border-0 border-white/10 sm:border-b border-white/20 text-xs text-white placeholder-gray-600 px-3 sm:px-1 py-2 sm:py-0.5 rounded-md sm:rounded-none focus:outline-none focus:border-[#FF007F] w-full sm:w-40"
+                />
               </div>
               <div className="flex flex-wrap gap-2">
                 {filteredDesigns.map((d) => {
@@ -487,11 +368,10 @@ export default function DesignForm({
       </div>
 
       {/* --- 3. SETTINGS --- */}
-      <div className="bg-[#1A1A1A]/50 border border-white/5 rounded-2xl p-5 sm:p-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* 1 column on mobile, 2 columns on sm, 3 columns on lg */}
+      <div className="bg-[#1A1A1A]/50 border border-white/5 rounded-2xl p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div>
-          <label className="block text-gray-400 text-sm font-semibold mb-1">
-            Price (optional)
-          </label>
+          <label className="block text-gray-400 text-sm font-semibold mb-1">Price (optional)</label>
           <input
             type="number"
             min="0"
@@ -503,9 +383,7 @@ export default function DesignForm({
           />
         </div>
         <div>
-          <label className="block text-gray-400 text-sm font-semibold mb-1">
-            Sort Order
-          </label>
+          <label className="block text-gray-400 text-sm font-semibold mb-1">Sort Order</label>
           <input
             type="number"
             value={sortOrder}
@@ -513,14 +391,13 @@ export default function DesignForm({
             className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FF007F]"
           />
         </div>
-        <div>
-          <label className="block text-gray-400 text-sm font-semibold mb-1">
-            Visibility
-          </label>
+        {/* Spans full width on sm (since it's the 3rd item in a 2-col grid), normal on lg */}
+        <div className="sm:col-span-2 lg:col-span-1">
+          <label className="block text-gray-400 text-sm font-semibold mb-1">Visibility</label>
           <button
             type="button"
             onClick={() => setIsActive((v) => !v)}
-            className={`w-full py-2 rounded-lg text-sm font-bold border transition-all ${isActive ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-400" : "bg-red-500/10 border-red-500/30 text-red-400"}`}
+            className={`w-full py-2.5 rounded-lg text-sm font-bold border transition-all ${isActive ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-400" : "bg-red-500/10 border-red-500/30 text-red-400"}`}
           >
             {isActive ? "Active (Visible)" : "Hidden"}
           </button>
@@ -528,19 +405,19 @@ export default function DesignForm({
       </div>
 
       {/* --- 4. ACTIONS --- */}
-      <div className="flex gap-3 pt-2">
+      <div className="flex flex-col sm:flex-row gap-3 pt-2 pb-10">
         <button
           type="button"
           onClick={onCancel}
           disabled={saving}
-          className="flex-1 py-3 rounded-xl border border-white/10 text-white font-bold hover:bg-white/5 transition-all disabled:opacity-50"
+          className="flex-1 py-3 rounded-xl border border-white/10 text-white font-bold hover:bg-white/5 transition-all disabled:opacity-50 order-2 sm:order-1"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={saving}
-          className="flex-1 py-3 rounded-xl bg-[#FF007F] text-white font-bold uppercase tracking-wider hover:bg-[#ff1a8c] transition-all disabled:opacity-50 shadow-[0_0_20px_rgba(255,0,127,0.2)]"
+          className="flex-1 py-3 rounded-xl bg-[#FF007F] text-white font-bold uppercase tracking-wider hover:bg-[#ff1a8c] transition-all disabled:opacity-50 shadow-[0_0_20px_rgba(255,0,127,0.2)] order-1 sm:order-2"
         >
           {saving ? "Saving…" : initial ? "Save Changes" : "Create Design"}
         </button>
