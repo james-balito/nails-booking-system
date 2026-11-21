@@ -332,23 +332,40 @@ export default function Gallery({
     onIntentHandled?.();
   }, [bookingIntent, onIntentHandled, onScrollToGallery]);
 
-  // Closing the panel (X or backdrop) keeps the draft and shows the
-  // "Booking in progress" bar, so the user can browse and switch designs.
+  // Every way of closing the booking (X, backdrop, Escape) asks first,
+  // as long as there is something to lose.
   const handleCloseAttempt = () => {
-    if (hasDraft) setIsPanelMinimized(true);
+    // closing the confirmation itself = keep editing
+    if (showCancelConfirm) {
+      setShowCancelConfirm(false);
+      return;
+    }
+    if (hasDraft) setShowCancelConfirm(true);
     else resetBooking();
   };
 
-  // Explicit discard (the x on the progress bar)
+  // The x on the "Booking in progress" bar: reopen the panel on the confirmation
   const handleDiscardDraft = () => {
-    if (hasTypedData) {
-      // ask first, since date/time/notes would be lost
+    if (hasDraft) {
       setIsPanelMinimized(false);
       setShowCancelConfirm(true);
     } else {
       resetBooking();
     }
   };
+
+  // Escape key closes the booking (through the same confirmation)
+  useEffect(() => {
+    if (!isBookingOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      // don't close the panel behind another open modal
+      if (pendingDesignChange || pendingCustomService) return;
+      handleCloseAttempt();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  });
 
   // Toggle service in the multi-select combo
   const toggleService = (service: Service) => {
@@ -565,7 +582,7 @@ export default function Gallery({
               <img
                 src={selectedDesign.img}
                 alt=""
-                className="w-9 h-11 sm:w-10 sm:h-12 object-cover rounded-md xl:rounded-2xl shrink-0"
+                className="w-9 h-11 sm:w-10 sm:h-12 object-cover rounded-md shrink-0"
               />
             )}
             <div className="min-w-0 flex-1 sm:flex-none">
@@ -865,8 +882,8 @@ export default function Gallery({
                   Discard Booking?
                 </h3>
                 <p className="text-xs sm:text-sm text-gray-400 mb-6">
-                  Are you sure you want to cancel? Your selected date, time, and
-                  notes will be lost.
+                  Are you sure you want to cancel? Your selected services,
+                  design, date, time, and notes will be lost.
                 </p>
                 <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 w-full">
                   <button
@@ -882,6 +899,15 @@ export default function Gallery({
                     Yes, Discard
                   </button>
                 </div>
+                <button
+                  onClick={() => {
+                    setShowCancelConfirm(false);
+                    setIsPanelMinimized(true);
+                  }}
+                  className="mt-4 text-xs text-[#FF007F] hover:text-white transition-colors"
+                >
+                  Minimize and keep browsing designs
+                </button>
               </div>
             ) : (
               <>
