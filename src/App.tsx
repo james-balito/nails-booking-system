@@ -19,9 +19,15 @@ import ProtectedRoute from "./route/protected-route";
 import AdminRoute from "./route/admin-route";
 
 // Admin Pages
+
+// Gallery
 const GalleryAdmin = lazy(() => import("./pages/admin/gallery"));
 import GalleryEdit from "./pages/admin/gallery/edit";
 import GalleryCreate from "./pages/admin/gallery/create";
+
+// Bookings
+import Bookings from "../src/pages/admin/bookings/index"
+
 
 // Error Pages
 import NotFound from "./components/error/not-found";
@@ -96,6 +102,19 @@ function App() {
               }
             >
               <GalleryEdit />
+            </Suspense>
+          }
+        />
+
+        <Route
+          path="bookings"
+          element={
+            <Suspense
+              fallback={
+                <div className="p-8 text-center text-gray-500">Loading…</div>
+              }
+            >
+              <Bookings />
             </Suspense>
           }
         />

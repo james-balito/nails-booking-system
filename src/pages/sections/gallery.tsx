@@ -586,7 +586,9 @@ export default function Gallery({
               />
             )}
             <div className="min-w-0 flex-1 sm:flex-none">
-              <p className="text-xs sm:text-sm font-bold">Booking in progress</p>
+              <p className="text-xs sm:text-sm font-bold">
+                Booking in progress
+              </p>
               <p className="text-[11px] sm:text-xs text-gray-400 truncate sm:max-w-[220px] xl:max-w-xs">
                 {selectedDesign
                   ? selectedDesign.title
@@ -774,8 +776,8 @@ export default function Gallery({
                 </>
               ) : (
                 <>
-                  You'll upload your inspiration photo or Pinterest reference
-                  on the next step so we can recreate it for you.
+                  You'll upload your inspiration photo or Pinterest reference on
+                  the next step so we can recreate it for you.
                 </>
               )}
             </p>
@@ -966,7 +968,7 @@ export default function Gallery({
                                 className="w-full flex items-center gap-3 sm:gap-4 p-4 sm:p-6 text-left"
                               >
                                 <div
-                                  className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${isSelected ? "bg-[#FF007F] border-[#FF007F]" : "border-gray-500 border"}`}
+                                  className={`w-6 h-6 rounded flex items-center justify-center shrink-0  ${isSelected ? "bg-[#FF007F] border-[#FF007F]" : "border-gray-500 border"}`}
                                 >
                                   {isSelected && (
                                     <svg
@@ -985,7 +987,50 @@ export default function Gallery({
                                   )}
                                 </div>
                                 <div className="min-w-0">
-                                  <h3 className="text-white font-bold text-base sm:text-lg">
+                                  <h3 className="flex gap-2 text-white font-bold text-base sm:text-lg">
+                                    {service.slug.toLowerCase() ===
+                                      "bespoke" && (
+                                      <div>
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          width="24"
+                                          height="24"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          stroke-width="2"
+                                          stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                          className="lucide lucide-sparkles preview-icon"
+                                        >
+                                          <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" />
+                                          <path d="M20 2v4" />
+                                          <path d="M22 4h-4" />
+                                          <circle cx="4" cy="20" r="2" />
+                                        </svg>
+                                      </div>
+                                    )}
+
+                                    {service.slug.toLowerCase() ===
+                                      "removal" && (
+                                      <div>
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          width="24"
+                                          height="24"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          stroke-width="2"
+                                          stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                          className="lucide lucide-eraser preview-icon"
+                                        >
+                                          <path d="M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21" />
+                                          <path d="m5.082 11.09 8.828 8.828" />
+                                        </svg>
+                                      </div>
+                                    )}
                                     {service.name}
                                   </h3>
                                   <p className="text-xs text-gray-400 mt-1">
@@ -1075,8 +1120,77 @@ export default function Gallery({
                                                 requestCustom(child);
                                               }
                                             }}
-                                            className="py-3 px-3 rounded-xl border border-white/10 bg-black text-white text-sm font-semibold hover:border-[#FF007F]/50 hover:text-[#FF007F] transition-all"
+                                            className="flex cursor-pointer gap-2 py-3 px-3 rounded-xl border border-white/10 bg-black text-white text-sm font-semibold hover:border-[#FF007F]/50 hover:text-[#FF007F] transition-all group"
                                           >
+                                            {child.slug === "custom" && (
+                                              <div className="text-white font-bold">
+                                                <svg
+                                                  xmlns="http://www.w3.org/2000/svg"
+                                                  width="20"
+                                                  height="20"
+                                                  viewBox="0 0 24 24"
+                                                  fill="none"
+                                                  stroke="currentColor"
+                                                  stroke-width="2"
+                                                  stroke-linecap="round"
+                                                  stroke-linejoin="round"
+                                                  className="lucide lucide-palette preview-icon group-hover:text-[#FF007F]"
+                                                >
+                                                  <path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z" />
+                                                  <circle
+                                                    cx="13.5"
+                                                    cy="6.5"
+                                                    r=".5"
+                                                    fill="currentColor"
+                                                  />
+                                                  <circle
+                                                    cx="17.5"
+                                                    cy="10.5"
+                                                    r=".5"
+                                                    fill="currentColor"
+                                                  />
+                                                  <circle
+                                                    cx="6.5"
+                                                    cy="12.5"
+                                                    r=".5"
+                                                    fill="currentColor"
+                                                  />
+                                                  <circle
+                                                    cx="8.5"
+                                                    cy="7.5"
+                                                    r=".5"
+                                                    fill="currentColor"
+                                                  />
+                                                </svg>
+                                              </div>
+                                            )}{" "}
+                                            {child.slug ===
+                                              "gallery-selection" && (
+                                              <div className="text-white font-bold">
+                                                <svg
+                                                  xmlns="http://www.w3.org/2000/svg"
+                                                  width="20"
+                                                  height="20"
+                                                  viewBox="0 0 24 24"
+                                                  fill="none"
+                                                  stroke="currentColor"
+                                                  stroke-width="2"
+                                                  stroke-linecap="round"
+                                                  stroke-linejoin="round"
+                                                  className="lucide lucide-gallery-horizontal preview-icon group-hover:text-[#FF007F]"
+                                                >
+                                                  <path d="M2 3v18" />
+                                                  <rect
+                                                    width="12"
+                                                    height="18"
+                                                    x="6"
+                                                    y="3"
+                                                    rx="2"
+                                                  />
+                                                  <path d="M22 3v18" />
+                                                </svg>
+                                              </div>
+                                            )}{" "}
                                             {child.name}
                                           </button>
                                         ))}

@@ -193,11 +193,11 @@ const generateBreadcrumbs = () => {
               >
                 <path d={item.icon} />
               </svg>
-              <a
+              <span
                 className={`text-sm font-medium ${isCollapsed ? "lg:hidden" : "block"}`}
               >
                 {item.name}
-              </a>
+              </span>
             </Link>
           ))}
         </nav>
