@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../../context/authContext";
-import { BreadcrumbProvider, useBreadcrumbLabels } from "../../../context/breadcrumbContext";
+import {
+  BreadcrumbProvider,
+  useBreadcrumbLabels,
+} from "../../../context/breadcrumbContext";
 import LogoutModal from "../../ui/logout-modal";
 import logo from "../../../assets/nobglogo.png";
 
@@ -34,50 +37,76 @@ function AdminLayoutContent() {
       name: "Gallery",
       href: "/admin/gallery",
       icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
-    }
+    },
+    {
+      name: "Schedule",
+      href: "/admin/schedule",
+      icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
+    },
+       {
+      name: "Manage Time",
+      href: "/admin/time",
+      icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
+    },
   ];
 
   // 👇 Helper to generate breadcrumbs based on the current URL
-const generateBreadcrumbs = () => {
-  const paths = location.pathname.split("/").filter(Boolean);
+  const generateBreadcrumbs = () => {
+    const paths = location.pathname.split("/").filter(Boolean);
 
-  const crumbs = paths.slice(1).map((seg, i) => {
-    const decoded = decodeURIComponent(seg);
-    const href = "/" + paths.slice(0, i + 2).join("/");
-    const key = "/" + paths.slice(0, i + 2).map(decodeURIComponent).join("/");
+    const crumbs = paths.slice(1).map((seg, i) => {
+      const decoded = decodeURIComponent(seg);
+      const href = "/" + paths.slice(0, i + 2).join("/");
+      const key =
+        "/" +
+        paths
+          .slice(0, i + 2)
+          .map(decodeURIComponent)
+          .join("/");
 
-    return {
-      href,
-      label: labels[key] ?? decoded.charAt(0).toUpperCase() + decoded.slice(1),
-      hasCustomLabel: key in labels, // a record like a design, not a real page
-    };
-  });
+      return {
+        href,
+        label:
+          labels[key] ?? decoded.charAt(0).toUpperCase() + decoded.slice(1),
+        hasCustomLabel: key in labels, // a record like a design, not a real page
+      };
+    });
 
-  return (
-    <div className="flex items-center gap-2 text-sm text-gray-400">
-      <Link to="/admin/dashboard" className="hover:text-white transition-colors">
-        Admin
-      </Link>
-      {crumbs.map((c, i) => {
-        const isLast = i === crumbs.length - 1;
-        return (
-          <div key={c.href} className="flex items-center gap-2">
-            <span className="text-gray-600">/</span>
-            {isLast || c.hasCustomLabel ? (
-              <span className={isLast ? "text-white font-medium" : "text-gray-300"}>
-                {c.label}
-              </span>
-            ) : (
-              <Link to={c.href} className="hover:text-white transition-colors">
-                {c.label}
-              </Link>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-};
+    return (
+      <div className="flex items-center gap-2 text-sm text-gray-400">
+        <Link
+          to="/admin/dashboard"
+          className="hover:text-white transition-colors"
+        >
+          Admin
+        </Link>
+        {crumbs.map((c, i) => {
+          const isLast = i === crumbs.length - 1;
+          return (
+            <div key={c.href} className="flex items-center gap-2">
+              <span className="text-gray-600">/</span>
+              {isLast || c.hasCustomLabel ? (
+                <span
+                  className={
+                    isLast ? "text-white font-medium" : "text-gray-300"
+                  }
+                >
+                  {c.label}
+                </span>
+              ) : (
+                <Link
+                  to={c.href}
+                  className="hover:text-white transition-colors"
+                >
+                  {c.label}
+                </Link>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-[#111111] text-white font-sans flex">
@@ -290,4 +319,3 @@ export default function AdminLayout() {
     </BreadcrumbProvider>
   );
 }
-

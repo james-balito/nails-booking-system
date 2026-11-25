@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import gsap from "gsap";
 import NailsCard from "../../components/nails-card";
-import { useAuth } from "../../context/authContext";
 import BookingCalendar from "../../components/booking-calendar";
 import supabase from "../../config/supabaseClient";
 import { listDesigns } from "../../api/designs";
@@ -75,7 +74,6 @@ export default function Gallery({
   onScrollToGallery,
 }: GalleryProps) {
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   // Gallery Data States
   const [images, setImages] = useState<NailData[]>([]);
@@ -100,12 +98,18 @@ export default function Gallery({
   const [selectedServices, setSelectedServices] = useState<Service[]>([]);
   const [selectedDesign, setSelectedDesign] = useState<NailData | null>(null);
   const [pendingServices, setPendingServices] = useState<Service[]>([]);
-  // When true the slide-over is hidden but the draft (design/date/notes) is kept,
-  // so the user can browse the gallery and pick a different design.
+
+  // When true the slide-over is hidden but the draft is kept
   const [isPanelMinimized, setIsPanelMinimized] = useState(false);
+
   // Custom service the user wants to switch to, waiting for confirmation
   const [pendingCustomService, setPendingCustomService] =
     useState<Service | null>(null);
+
+  // Validation States
+  const [validationMessage, setValidationMessage] = useState<string | null>(
+    null,
+  );
 
   const [showToast, setShowToast] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
@@ -122,25 +126,30 @@ export default function Gallery({
   const isBookingOpen =
     !isPanelMinimized && (bookingScreen !== null || selectedDesign !== null);
 
-  // Anything worth keeping if the user closes the panel
   const hasTypedData = !!(selectedDate || selectedTime || notes || customImage);
   const hasDraft =
     selectedDesign !== null || selectedServices.length > 0 || hasTypedData;
   const hasCustomSelected = selectedServices.some((s) => s.slug === "custom");
+
   const isDetailsVisible = useModalAnimation(!!selectedNail);
   const isBookingVisible = useModalAnimation(isBookingOpen);
 
   const gridRef = useRef<HTMLDivElement>(null);
 
-  const availableTimes = [
-    "10:00 AM",
-    "11:00 AM",
-    "1:00 PM",
-    "2:00 PM",
-    "3:00 PM",
-    "4:00 PM",
-    "5:00 PM",
-  ];
+  const showValidationError = (msg: string) => {
+    setValidationMessage(msg);
+    setTimeout(() => setValidationMessage(null), 3000);
+  };
+
+  // const availableTimes = [
+  //   "10:00 AM",
+  //   "11:00 AM",
+  //   "1:00 PM",
+  //   "2:00 PM",
+  //   "3:00 PM",
+  //   "4:00 PM",
+  //   "5:00 PM",
+  // ];
 
   // ── Fetch Services & Designs on Mount ─────────────────────────────────────
   useEffect(() => {
@@ -179,9 +188,7 @@ export default function Gallery({
       if (!loadingDesigns) {
         listDesigns({ includeInactive: false, pageSize: 100 })
           .then(({ data }) => setImages(data.map(mapDesign)))
-          .catch(() => {
-            /* keep the current list if the refresh fails */
-          });
+          .catch(() => {});
       }
     };
     window.addEventListener("focus", handleFocus);
@@ -190,7 +197,6 @@ export default function Gallery({
 
   // ── Design selection helpers ──────────────────────────────────────────────
 
-  // Adds the "gallery-selection" service (and its parent, e.g. Bespoke) if missing
   const withGalleryServices = (base: Service[]) => {
     const gallery = services.find((s) => s.slug === "gallery-selection");
     if (!gallery) return base;
@@ -204,8 +210,6 @@ export default function Gallery({
     return merged;
   };
 
-  // A collection design and a custom set are mutually exclusive:
-  // picking a design drops the custom service (and its uploaded photo).
   const applyDesign = (design: NailData) => {
     const base = (
       pendingServices.length > 0 ? pendingServices : selectedServices
@@ -219,7 +223,6 @@ export default function Gallery({
   };
 
   const handleBookDesign = (newDesign: NailData) => {
-    // A different design (or a custom set) is already chosen -> confirm first
     if (
       (selectedDesign && selectedDesign.id !== newDesign.id) ||
       (!selectedDesign && hasCustomSelected)
@@ -227,14 +230,11 @@ export default function Gallery({
       setPendingDesignChange(newDesign);
       return;
     }
-    // Otherwise select it (or just resume the panel if it's the same design)
     applyDesign(newDesign);
   };
 
-  // Choosing the custom set always asks for confirmation first
   const requestCustom = (customService: Service) => {
     if (hasCustomSelected) {
-      // already chosen -> just resume the form
       setBookingScreen("Form");
       setIsPanelMinimized(false);
       return;
@@ -242,7 +242,6 @@ export default function Gallery({
     setPendingCustomService(customService);
   };
 
-  // Confirmed: custom replaces any chosen design / gallery selection
   const applyCustom = (customService: Service) => {
     setSelectedDesign(null);
     setPendingServices([]);
@@ -320,7 +319,6 @@ export default function Gallery({
   // Handle external booking intents (Navbar, etc.)
   useEffect(() => {
     if (!bookingIntent) return;
-
     onScrollToGallery?.();
     setSelectedDesign(null);
     setSelectedServices([]);
@@ -332,10 +330,7 @@ export default function Gallery({
     onIntentHandled?.();
   }, [bookingIntent, onIntentHandled, onScrollToGallery]);
 
-  // Every way of closing the booking (X, backdrop, Escape) asks first,
-  // as long as there is something to lose.
   const handleCloseAttempt = () => {
-    // closing the confirmation itself = keep editing
     if (showCancelConfirm) {
       setShowCancelConfirm(false);
       return;
@@ -344,8 +339,6 @@ export default function Gallery({
     else resetBooking();
   };
 
-  // The x on the "Booking in progress" bar: the confirmation appears over the
-  // page and the panel stays minimized.
   const handleDiscardDraft = () => {
     if (hasDraft) {
       setShowCancelConfirm(true);
@@ -354,12 +347,11 @@ export default function Gallery({
     }
   };
 
-  // Escape key closes the booking (through the same confirmation)
+  // Escape key closes the booking
   useEffect(() => {
     if (!isBookingOpen && !showCancelConfirm) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
-      // don't close the panel behind another open modal
       if (pendingDesignChange || pendingCustomService) return;
       handleCloseAttempt();
     };
@@ -367,13 +359,11 @@ export default function Gallery({
     return () => window.removeEventListener("keydown", onKeyDown);
   });
 
-  // Toggle service in the multi-select combo
   const toggleService = (service: Service) => {
     const isRemoving = selectedServices.some((s) => s.id === service.id);
     const children = services.filter((c) => c.parent_id === service.id);
 
     if (isRemoving) {
-      // unchecking a parent (e.g. Bespoke) also clears what was chosen under it
       if (children.some((c) => c.slug === "gallery-selection"))
         setSelectedDesign(null);
       if (children.some((c) => c.slug === "custom")) setCustomImage(null);
@@ -390,7 +380,13 @@ export default function Gallery({
 
   // ── Handle Booking Submission ─────────────────────────────────────────────
   const handleConfirmBooking = async () => {
-    if (!user) {
+    // 1. Ask Supabase directly who is logged in (bypasses AuthContext issues)
+    const {
+      data: { session },
+      error: authError,
+    } = await supabase.auth.getSession();
+
+    if (authError || !session?.user) {
       resetBooking();
       setShowToast(true);
       setTimeout(() => {
@@ -400,27 +396,24 @@ export default function Gallery({
       return;
     }
 
-    if (!selectedDate || !selectedTime) {
-      alert("Please select both a date and a time.");
-      return;
-    }
+    const currentUserId = session.user.id;
 
-    if (selectedServices.length === 0) {
-      alert("Please select at least one service.");
-      return;
-    }
+    if (!selectedDate) return showValidationError("Please select a date.");
+    if (!selectedTime) return showValidationError("Please select a time.");
+    if (selectedServices.length === 0)
+      return showValidationError("Please select at least one service.");
 
     setIsSubmitting(true);
     let uploadedImageUrl: string | null = null;
 
     try {
-      // 1. Upload custom image if the 'custom' service was selected
+      // 2. Upload custom image (if needed)
       const wantsCustomImage = selectedServices.some(
         (s) => s.slug === "custom",
       );
       if (wantsCustomImage && customImage) {
         const ext = customImage.name.split(".").pop()?.toLowerCase() || "jpg";
-        const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+        const path = `${currentUserId}/${crypto.randomUUID()}.${ext}`;
 
         const { error: uploadError } = await supabase.storage
           .from("custom-inspirations")
@@ -436,30 +429,32 @@ export default function Gallery({
         uploadedImageUrl = signed.signedUrl;
       }
 
-      // 2. Create the main Booking record
+      // 3. Insert into `bookings` using the direct UUID
       const { data: booking, error: dbError } = await supabase
         .from("bookings")
         .insert({
-          user_id: user.id,
+          user_id: currentUserId, // 👈 Using the direct session ID
           date: selectedDate,
           time: selectedTime,
           notes: notes,
+          // Status is NOT included. Let the DB default to 'pending'
         })
         .select()
         .single();
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error("DB ERROR:", dbError);
+        throw dbError;
+      }
 
-      // 3. Create the Booking Services junction records
+      // 4. Insert the junction records
       const bookingServicesData = selectedServices.map((service) => ({
         booking_id: booking.id,
         service_id: service.id,
-        // Apply design only to the gallery selection service
         design_id:
           service.slug === "gallery-selection"
             ? selectedDesign?.id || null
             : null,
-        // Apply custom image only to the custom service
         custom_image_url: service.slug === "custom" ? uploadedImageUrl : null,
       }));
 
@@ -467,11 +462,18 @@ export default function Gallery({
         .from("booking_services")
         .insert(bookingServicesData);
 
-      if (junctionError) throw junctionError;
+      if (junctionError) {
+        console.error("JUNCTION ERROR:", junctionError);
+        throw junctionError;
+      }
 
       alert("Booking request submitted! We will review and confirm shortly.");
       resetBooking();
     } catch (error: any) {
+      console.error("🚨 FULL ERROR OBJECT:", error);
+      console.error("🚨 ERROR DETAILS:", error.details);
+      console.error("🚨 ERROR HINT:", error.hint);
+      console.error("🚨 ERROR CODE:", error.code);
       alert("Error booking: " + error.message);
     } finally {
       setIsSubmitting(false);
@@ -503,16 +505,14 @@ export default function Gallery({
     return () => clearTimeout(timer);
   }, [visibleCount, selectedFilters, loadingDesigns]);
 
-  // ── Derived Values for UI ─────────────────────────────────────────────────
+  // ── Derived Values ────────────────────────────────────────────────────────
   const needsCustomImage = selectedServices.some((s) => s.slug === "custom");
-
   const bookingHeaderTitle =
     selectedServices.length > 1
       ? "Combo Booking"
       : selectedServices.length === 1
         ? selectedServices[0].name
         : "New Booking";
-
   const isFormScreen =
     bookingScreen === "Form" ||
     selectedDesign !== null ||
@@ -520,7 +520,7 @@ export default function Gallery({
 
   return (
     <div className="py-12 sm:py-16 lg:py-24 px-4 sm:px-6 lg:px-10 xl:px-16 max-w-[1600px] mx-auto relative">
-      {/* --- FLOATING GALLERY BANNER (Shows when user is browsing designs) --- */}
+      {/* FLOATING GALLERY BANNER */}
       {pendingServices.length > 0 && (
         <div className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-[9990] w-[calc(100vw-2rem)] sm:w-auto sm:max-w-[90vw] animate-in slide-in-from-bottom-5 fade-in duration-300">
           <div className="bg-[#1A1A1A] border border-[#FF007F]/50 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-2xl sm:rounded-full shadow-[0_0_40px_rgba(255,0,127,0.3)] flex items-center gap-3 sm:gap-4">
@@ -574,7 +574,7 @@ export default function Gallery({
         </div>
       )}
 
-      {/* --- BOOKING IN PROGRESS BAR (panel minimized while browsing) --- */}
+      {/* BOOKING IN PROGRESS BAR */}
       {isPanelMinimized && hasDraft && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[9990] w-[calc(100vw-2rem)] sm:w-auto sm:max-w-[90vw] animate-in slide-in-from-top-4 fade-in duration-300">
           <div className="bg-[#1A1A1A] border border-[#FF007F]/50 text-white pl-2.5 pr-2.5 sm:pl-3 sm:pr-4 py-2.5 sm:py-3 rounded-2xl sm:rounded-full shadow-[0_0_40px_rgba(255,0,127,0.3)] flex items-center gap-2 sm:gap-3">
@@ -613,7 +613,7 @@ export default function Gallery({
         </div>
       )}
 
-      {/* --- TOAST NOTIFICATION --- */}
+      {/* TOAST NOTIFICATION */}
       {showToast && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[10000] w-[calc(100vw-2rem)] sm:w-auto max-w-sm animate-in slide-in-from-top-4 fade-in duration-300">
           <div className="bg-[#1A1A1A] border border-red-500/30 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-2xl shadow-2xl flex items-center gap-3">
@@ -644,7 +644,38 @@ export default function Gallery({
         </div>
       )}
 
-      {/* --- CHANGE DESIGN CONFIRMATION MODAL (page level, above everything) --- */}
+      {/* VALIDATION MESSAGE TOAST */}
+      {validationMessage && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[10000] w-[calc(100vw-2rem)] sm:w-auto max-w-sm animate-in slide-in-from-top-4 fade-in duration-300">
+          <div className="bg-[#1A1A1A] border border-[#FF007F]/50 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-2xl shadow-2xl flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-[#FF007F]/20 flex items-center justify-center shrink-0">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#FF007F"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 16v-4" />
+                <path d="M12 8h.01" />
+              </svg>
+            </div>
+            <div className="min-w-0">
+              <p className="font-bold text-sm">Missing Information</p>
+              <p className="text-xs xl:text-sm text-gray-300">
+                {validationMessage}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CHANGE DESIGN CONFIRMATION MODAL */}
       {pendingDesignChange && (selectedDesign || hasCustomSelected) && (
         <div className="fixed inset-0 z-[10001] flex items-center justify-center p-3 sm:p-4">
           <div
@@ -694,12 +725,11 @@ export default function Gallery({
                   <strong className="text-white">
                     "{pendingDesignChange.title}"
                   </strong>{" "}
-                  will remove it
-                  {customImage ? " and your uploaded photo" : ""}. Continue?
+                  will remove it{customImage ? " and your uploaded photo" : ""}.
+                  Continue?
                 </>
               )}
             </p>
-
             <div className="flex items-center gap-3 sm:gap-4 bg-white/5 p-3 rounded-xl border border-white/10 mb-4 sm:mb-6">
               <img
                 src={pendingDesignChange.img}
@@ -715,7 +745,6 @@ export default function Gallery({
                 </p>
               </div>
             </div>
-
             <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
               <button
                 onClick={() => setPendingDesignChange(null)}
@@ -738,7 +767,7 @@ export default function Gallery({
         </div>
       )}
 
-      {/* --- CUSTOM SET CONFIRMATION MODAL (page level, above everything) --- */}
+      {/* CUSTOM SET CONFIRMATION MODAL */}
       {pendingCustomService && (
         <div className="fixed inset-0 z-[10001] flex items-center justify-center p-3 sm:p-4">
           <div
@@ -781,7 +810,6 @@ export default function Gallery({
                 </>
               )}
             </p>
-
             {selectedDesign && (
               <div className="flex items-center gap-3 sm:gap-4 bg-white/5 p-3 rounded-xl border border-white/10 mb-4 sm:mb-6">
                 <img
@@ -799,7 +827,6 @@ export default function Gallery({
                 </div>
               </div>
             )}
-
             <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
               <button
                 onClick={() => setPendingCustomService(null)}
@@ -822,12 +849,11 @@ export default function Gallery({
         </div>
       )}
 
-      {/* --- DISCARD BOOKING CONFIRMATION MODAL (page level, above everything) --- */}
+      {/* DISCARD BOOKING CONFIRMATION MODAL */}
       {showCancelConfirm && (
         <div
           role="alertdialog"
           aria-modal="true"
-          aria-labelledby="discard-title"
           className="fixed inset-0 z-[10001] flex items-center justify-center p-3 sm:p-4"
         >
           <div
@@ -853,10 +879,7 @@ export default function Gallery({
                 <line x1="12" y1="17" x2="12.01" y2="17" />
               </svg>
             </div>
-            <h3
-              id="discard-title"
-              className="text-lg sm:text-xl font-bold text-white mb-2"
-            >
+            <h3 className="text-lg sm:text-xl font-bold text-white mb-2">
               Discard Booking?
             </h3>
             <p className="text-xs sm:text-sm text-gray-400 mb-4 sm:mb-6">
@@ -892,7 +915,7 @@ export default function Gallery({
         </div>
       )}
 
-      {/* --- BOOKING SLIDE-OVER MODAL --- */}
+      {/* BOOKING SLIDE-OVER MODAL */}
       {isBookingVisible && (
         <div className="fixed inset-0 z-[9999] flex justify-end overflow-hidden">
           <div
@@ -931,7 +954,7 @@ export default function Gallery({
 
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 xl:p-8 space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
-              {/* 1. MAIN SELECTION SCREEN (Multi-Select) */}
+              {/* 1. SELECTION SCREEN */}
               {bookingScreen === "Selection" && (
                 <div className="flex flex-col gap-3 sm:gap-4 py-2">
                   <p className="text-gray-400 text-xs sm:text-sm text-center mb-2 sm:mb-4">
@@ -968,7 +991,7 @@ export default function Gallery({
                                 className="w-full flex items-center gap-3 sm:gap-4 p-4 sm:p-6 text-left"
                               >
                                 <div
-                                  className={`w-6 h-6 rounded flex items-center justify-center shrink-0  ${isSelected ? "bg-[#FF007F] border-[#FF007F]" : "border-gray-500 border"}`}
+                                  className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${isSelected ? "bg-[#FF007F] border-[#FF007F]" : "border-gray-500 border"}`}
                                 >
                                   {isSelected && (
                                     <svg
@@ -998,9 +1021,9 @@ export default function Gallery({
                                           viewBox="0 0 24 24"
                                           fill="none"
                                           stroke="currentColor"
-                                          stroke-width="2"
-                                          stroke-linecap="round"
-                                          stroke-linejoin="round"
+                                          strokeWidth="2"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
                                           className="lucide lucide-sparkles preview-icon"
                                         >
                                           <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" />
@@ -1010,7 +1033,6 @@ export default function Gallery({
                                         </svg>
                                       </div>
                                     )}
-
                                     {service.slug.toLowerCase() ===
                                       "removal" && (
                                       <div>
@@ -1021,9 +1043,9 @@ export default function Gallery({
                                           viewBox="0 0 24 24"
                                           fill="none"
                                           stroke="currentColor"
-                                          stroke-width="2"
-                                          stroke-linecap="round"
-                                          stroke-linejoin="round"
+                                          strokeWidth="2"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
                                           className="lucide lucide-eraser preview-icon"
                                         >
                                           <path d="M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21" />
@@ -1039,34 +1061,7 @@ export default function Gallery({
                                 </div>
                               </button>
 
-                              {/* Custom set chosen -> no need to choose a set */}
-                              {isSelected &&
-                                hasChildren &&
-                                hasCustomSelected && (
-                                  <div className="px-4 sm:px-6 pb-4 sm:pb-6 pt-3 border-t border-white/10 mt-2 flex items-center justify-between gap-3">
-                                    <p className="text-xs sm:text-sm text-white">
-                                      <span className="text-[#FF007F] font-bold">
-                                        ✓
-                                      </span>{" "}
-                                      Custom Nail Set selected
-                                    </p>
-                                    <button
-                                      onClick={() => {
-                                        setSelectedServices((prev) =>
-                                          prev.filter(
-                                            (s) => s.slug !== "custom",
-                                          ),
-                                        );
-                                        setCustomImage(null);
-                                      }}
-                                      className="text-xs text-red-400 hover:text-red-300"
-                                    >
-                                      Remove
-                                    </button>
-                                  </div>
-                                )}
-
-                              {/* Sub-options for Bespoke */}
+                              {/* Sub-options */}
                               {isSelected &&
                                 hasChildren &&
                                 !hasCustomSelected && (
@@ -1084,14 +1079,10 @@ export default function Gallery({
                                             key={child.id}
                                             onClick={(e) => {
                                               e.stopPropagation();
-
                                               if (
                                                 child.slug ===
                                                 "gallery-selection"
                                               ) {
-                                                // Save ALL currently selected services
-                                                // (e.g. Bespoke + Removal) plus the gallery
-                                                // selection they just clicked (no duplicates).
                                                 const servicesToSave = [
                                                   ...selectedServices,
                                                 ];
@@ -1099,24 +1090,18 @@ export default function Gallery({
                                                   !servicesToSave.some(
                                                     (s) => s.id === child.id,
                                                   )
-                                                ) {
+                                                )
                                                   servicesToSave.push(child);
-                                                }
                                                 setPendingServices(
                                                   servicesToSave,
                                                 );
-
-                                                // Close the modal
                                                 resetBooking();
-
-                                                // Scroll to gallery
                                                 if (onScrollToGallery)
                                                   setTimeout(
                                                     () => onScrollToGallery(),
                                                     150,
                                                   );
                                               } else {
-                                                // Custom Flow: ask for confirmation first
                                                 requestCustom(child);
                                               }
                                             }}
@@ -1131,9 +1116,9 @@ export default function Gallery({
                                                   viewBox="0 0 24 24"
                                                   fill="none"
                                                   stroke="currentColor"
-                                                  stroke-width="2"
-                                                  stroke-linecap="round"
-                                                  stroke-linejoin="round"
+                                                  strokeWidth="2"
+                                                  strokeLinecap="round"
+                                                  strokeLinejoin="round"
                                                   className="lucide lucide-palette preview-icon group-hover:text-[#FF007F]"
                                                 >
                                                   <path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z" />
@@ -1163,7 +1148,7 @@ export default function Gallery({
                                                   />
                                                 </svg>
                                               </div>
-                                            )}{" "}
+                                            )}
                                             {child.slug ===
                                               "gallery-selection" && (
                                               <div className="text-white font-bold">
@@ -1174,9 +1159,9 @@ export default function Gallery({
                                                   viewBox="0 0 24 24"
                                                   fill="none"
                                                   stroke="currentColor"
-                                                  stroke-width="2"
-                                                  stroke-linecap="round"
-                                                  stroke-linejoin="round"
+                                                  strokeWidth="2"
+                                                  strokeLinecap="round"
+                                                  strokeLinejoin="round"
                                                   className="lucide lucide-gallery-horizontal preview-icon group-hover:text-[#FF007F]"
                                                 >
                                                   <path d="M2 3v18" />
@@ -1190,11 +1175,38 @@ export default function Gallery({
                                                   <path d="M22 3v18" />
                                                 </svg>
                                               </div>
-                                            )}{" "}
+                                            )}
                                             {child.name}
                                           </button>
                                         ))}
                                     </div>
+                                  </div>
+                                )}
+
+                              {/* Custom Already Selected Indicator */}
+                              {isSelected &&
+                                hasChildren &&
+                                hasCustomSelected && (
+                                  <div className="px-4 sm:px-6 pb-4 sm:pb-6 pt-3 border-t border-white/10 mt-2 flex items-center justify-between gap-3">
+                                    <p className="text-xs sm:text-sm text-white">
+                                      <span className="text-[#FF007F] font-bold">
+                                        ✓
+                                      </span>{" "}
+                                      Custom Nail Set selected
+                                    </p>
+                                    <button
+                                      onClick={() => {
+                                        setSelectedServices((prev) =>
+                                          prev.filter(
+                                            (s) => s.slug !== "custom",
+                                          ),
+                                        );
+                                        setCustomImage(null);
+                                      }}
+                                      className="text-xs text-red-400 hover:text-red-300"
+                                    >
+                                      Remove
+                                    </button>
                                   </div>
                                 )}
                             </div>
@@ -1204,7 +1216,9 @@ export default function Gallery({
                       <button
                         onClick={() => {
                           if (selectedServices.length === 0)
-                            return alert("Please select at least one service.");
+                            return showValidationError(
+                              "Please select at least one service.",
+                            );
                           setBookingScreen("Form");
                         }}
                         className="mt-2 sm:mt-4 w-full py-3 sm:py-4 text-sm rounded-xl bg-[#FF007F] text-white font-bold uppercase tracking-wider hover:bg-[#ff1a8c] transition-all"
@@ -1219,7 +1233,6 @@ export default function Gallery({
               {/* 2. FORM SCREEN */}
               {isFormScreen && bookingScreen === "Form" && (
                 <>
-                  {/* Selected Services Summary */}
                   <div className="space-y-2 sm:space-y-3 bg-white/5 p-3 sm:p-4 rounded-2xl border border-white/10">
                     <span className="text-[#FF007F] text-xs font-bold uppercase tracking-widest">
                       Selected Services
@@ -1276,7 +1289,7 @@ export default function Gallery({
                         onClick={() => setBookingScreen("Selection")}
                         className="text-xs text-[#FF007F] hover:text-white transition-colors"
                       >
-                        + Add another service (e.g., Removal)
+                        + Add another service
                       </button>
                     </div>
                   </div>
@@ -1287,9 +1300,11 @@ export default function Gallery({
                         Select Date
                       </label>
                       <BookingCalendar
-                        onDateSelect={(date) => setSelectedDate(date)}
+                        onDateSelect={(date) => {
+                          setSelectedDate(date);
+                          setSelectedTime(""); // Reset time when date changes
+                        }}
                         onTimeSelect={(time) => setSelectedTime(time)}
-                        availableTimes={availableTimes}
                       />
                     </div>
 
@@ -1348,7 +1363,7 @@ export default function Gallery({
         </div>
       )}
 
-      {/* --- DETAILS MODAL --- */}
+      {/* DETAILS MODAL */}
       {isDetailsVisible && (
         <div
           role="dialog"
@@ -1637,11 +1652,8 @@ export default function Gallery({
         <button
           onClick={() => {
             const customService = services.find((s) => s.slug === "custom");
-            if (customService) {
-              requestCustom(customService);
-            } else {
-              alert("Custom service not found.");
-            }
+            if (customService) requestCustom(customService);
+            else showValidationError("Custom service not found.");
           }}
           className="w-full sm:w-auto sm:whitespace-nowrap px-6 sm:px-8 py-3 sm:py-4 bg-[#FF007F] hover:bg-[#FF007F]/90 text-white font-extrabold text-xs uppercase tracking-widest rounded-full cursor-pointer shadow-[0_0_30px_rgba(255,0,127,0.4)] hover:shadow-[0_0_60px_rgba(255,0,127,0.4)] transition-all"
         >

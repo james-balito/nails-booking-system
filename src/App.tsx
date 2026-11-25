@@ -26,8 +26,13 @@ import GalleryEdit from "./pages/admin/gallery/edit";
 import GalleryCreate from "./pages/admin/gallery/create";
 
 // Bookings
-import Bookings from "../src/pages/admin/bookings/index"
+import Bookings from "../src/pages/admin/bookings"
 
+// Schedule
+import Schedule from "./pages/admin/schedules"
+
+// Time 
+import Time from "../src/pages/admin/time"
 
 // Error Pages
 import NotFound from "./components/error/not-found";
@@ -115,6 +120,32 @@ function App() {
               }
             >
               <Bookings />
+            </Suspense>
+          }
+        />
+
+         <Route
+          path="time"
+          element={
+            <Suspense
+              fallback={
+                <div className="p-8 text-center text-gray-500">Loading…</div>
+              }
+            >
+              <Time />
+            </Suspense>
+          }
+        />
+
+         <Route
+          path="schedule"
+          element={
+            <Suspense
+              fallback={
+                <div className="p-8 text-center text-gray-500">Loading…</div>
+              }
+            >
+              <Schedule />
             </Suspense>
           }
         />
