@@ -28,9 +28,6 @@ import GalleryCreate from "./pages/admin/gallery/create";
 // Bookings
 import Bookings from "../src/pages/admin/bookings"
 
-// Schedule
-import Schedule from "./pages/admin/schedules"
-
 // Time 
 import Time from "../src/pages/admin/time"
 
@@ -137,18 +134,6 @@ function App() {
           }
         />
 
-         <Route
-          path="schedule"
-          element={
-            <Suspense
-              fallback={
-                <div className="p-8 text-center text-gray-500">Loading…</div>
-              }
-            >
-              <Schedule />
-            </Suspense>
-          }
-        />
         <Route path="users" element={<UsersIndex />} />
         <Route path="*" element={<NotFound />} />
       </Route>
