@@ -7,6 +7,7 @@ import supabase from "../../config/supabaseClient";
 import { listDesigns } from "../../api/designs";
 import { listServices, type Service } from "../../api/services";
 
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
