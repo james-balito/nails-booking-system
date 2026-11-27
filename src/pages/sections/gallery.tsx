@@ -1336,7 +1336,7 @@ export default function Gallery({
                         value={igUsername}
                         onChange={(e) => setIgUsername(e.target.value)}
                         className="w-full text-sm bg-black border border-white/10 rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-white focus:outline-none focus:border-[#FF007F] resize-none"
-                        placeholder="@yourusername"
+                        placeholder="e.g., @johndoe"
                       ></input>
                     </div>
 
