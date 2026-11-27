@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import {
-  type Design,
-  type DesignInput,
   createDesign,
   updateDesign,
   uploadDesignImage,
   fetchDesignCategories,
 } from "../../../../api/designs";
+import type { Design, DesignInput } from "../../../../interfaces/interface"
 
 // ── Default fallbacks ────────────────────────────────────────────────────────
 const DEFAULT_SHAPES = ["Almond", "Square", "Coffin", "Stiletto", "Oval", "Round", "Squoval"];
