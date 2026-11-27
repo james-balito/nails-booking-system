@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import supabase from "../../config/supabaseClient";
+import type {User} from "../../interfaces/interface"
+
 
 export default function UsersIndex() {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

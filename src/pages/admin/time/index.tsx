@@ -1,14 +1,9 @@
 import { useEffect, useState } from "react";
 import supabase from "../../../config/supabaseClient";
-
-interface CustomTime {
-  id: string;
-  time: string;
-  is_active: boolean;
-}
+import type { Time } from "../../../interfaces/interface"
 
 export default function CustomTimesAdmin() {
-  const [times, setTimes] = useState<CustomTime[]>([]);
+  const [times, setTimes] = useState<Time[]>([]);
   const [loading, setLoading] = useState(true);
   const [newTime, setNewTime] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);

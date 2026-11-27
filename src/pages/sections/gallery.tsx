@@ -7,7 +7,6 @@ import supabase from "../../config/supabaseClient";
 import { listDesigns } from "../../api/designs";
 import { listServices, type Service } from "../../api/services";
 
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
@@ -119,6 +118,7 @@ export default function Gallery({
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [notes, setNotes] = useState("");
+  const [igUsername, setIgUsername] = useState("");
   const [customImage, setCustomImage] = useState<File | null>(null);
 
   // Availability & Submit States
@@ -438,6 +438,7 @@ export default function Gallery({
           date: selectedDate,
           time: selectedTime,
           notes: notes,
+          ig_username: igUsername
           // Status is NOT included. Let the DB default to 'pending'
         })
         .select()
@@ -1326,6 +1327,18 @@ export default function Gallery({
                         />
                       </div>
                     )}
+
+                    <div>
+                      <label className="block text-gray-400 text-xs sm:text-sm font-semibold mb-2">
+                        Instagram Username
+                      </label>
+                      <input
+                        value={igUsername}
+                        onChange={(e) => setIgUsername(e.target.value)}
+                        className="w-full text-sm bg-black border border-white/10 rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-white focus:outline-none focus:border-[#FF007F] resize-none"
+                        placeholder="@yourusername"
+                      ></input>
+                    </div>
 
                     <div>
                       <label className="block text-gray-400 text-xs sm:text-sm font-semibold mb-2">

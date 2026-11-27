@@ -10,6 +10,7 @@ export async function listAllBookings() {
       status,
       notes,
       created_at,
+       ig_username,
       user:user_profiles!bookings_user_profile_fkey ( id, full_name ),
       booking_services (
         id,
@@ -60,7 +61,7 @@ export async function updateBookingStatus(id: string, status: string) {
   return data;
 }
 
-export async function updateBookingDetails(id: string, updates: { date?: string; time?: string; notes?: string, status?: string }) {
+export async function updateBookingDetails(id: string, updates: { date?: string; time?: string; notes?: string, status?: string, ig_username?: string }) {
   const { data, error } = await supabase
     .from("bookings")
     .update(updates)

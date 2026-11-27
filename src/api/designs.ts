@@ -1,35 +1,8 @@
 import supabase from "../config/supabaseClient";
+import type { Design, DesignInput } from "../interfaces/interface"
 
 const BUCKET = "designs";
 
-export interface Design {
-  id: string;
-  slug: string;
-  title: string;
-  description: string;
-  shape: string;
-  colors: string[];
-  designs: string[];
-  image_url: string;
-  price_cents: number | null;
-  is_active: boolean;
-  sort_order: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export type DesignInput = {
-  slug: string;
-  title: string;
-  description: string;
-  shape: string;
-  colors: string[];
-  designs: string[];
-  image_url: string;
-  price_cents?: number | null;
-  is_active?: boolean;
-  sort_order?: number;
-};
 
 // ── Read ─────────────────────────────────────────────────────────────────────
 export async function listDesigns(opts: {
