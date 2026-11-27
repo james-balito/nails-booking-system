@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getDesign, getDesignBySlug, type Design } from "../../../api/designs";
+import { getDesign, getDesignBySlug } from "../../../api/designs";
+import type { Design } from "../../../interfaces/interface"
 import DesignForm from "../../../components/layout/form/gallery/design-form";
 import { useBreadcrumbLabel } from "../../../context/breadcrumbContext";
 
