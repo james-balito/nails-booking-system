@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback} from "react";
 import Navbar from "../components/ui/navbar";
 import Footer from "../components/ui/footer";
 import LogoutModal from "../components/ui/logout-modal";
@@ -12,11 +12,14 @@ import Testimonials from "./sections/testimonials";
 import { useScrollAnimation } from "../hooks/useScrollAnimation";
 
 export default function WelcomePage() {
+
   useScrollAnimation();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   // Single source of truth for "what should Gallery open, and when"
-  const [bookingIntent, setBookingIntent] = useState<BookingIntent | null>(null);
+  const [bookingIntent, setBookingIntent] = useState<BookingIntent | null>(
+    null,
+  );
   const galleryRef = useRef<HTMLElement>(null);
 
   const openBooking = useCallback(
@@ -24,11 +27,12 @@ export default function WelcomePage() {
       // Nonce guarantees effect re-fires even for repeated same-target clicks
       setBookingIntent({ target, serviceName, nonce: Date.now() });
     },
-    []
+    [],
   );
 
   const onScrollToGallery = useCallback(() => {
-    if (galleryRef.current) galleryRef.current.scrollIntoView({ behavior: "smooth" });
+    if (galleryRef.current)
+      galleryRef.current.scrollIntoView({ behavior: "smooth" });
   }, []);
 
   const handleServiceBookClick = useCallback(
@@ -40,7 +44,7 @@ export default function WelcomePage() {
         openBooking("Removal", serviceName);
       }
     },
-    [openBooking]
+    [openBooking],
   );
 
   return (
